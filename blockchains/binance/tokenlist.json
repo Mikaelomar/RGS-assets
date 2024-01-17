@@ -1,13 +1,23 @@
 {
-    "name": "Trust Wallet: BNB",
-    "logoURI": "https://trustwallet.com/assets/images/favicon.png",
-    "timestamp": "2022-09-05T14:41:49.306430",
-    "tokens": [
-
+    "name": "RUGRATS",
+    "website": "https://RUGRATSMEME.COM",
+    "description": "A blockchain with a full-fledged environment for developing high-performance decentralized applications and cross-chain compatibility with Binance Chain.",
+    "explorer": "https://bscscan.com/address/0x1A8743446c6E4F46dE1AA5c3871692db931FF936",
+    
+    "symbol": "RGS",
+    "type": "TOKEN",
+    "decimals": 18,
+    "status": "active",
+    "tags": [
+        "staking-native"
     ],
-    "version": {
-        "major": 389,
-        "minor": 0,
-        "patch": 0
-    }
+    "links": [
+        {
+        },
+        {
+            "name": "twitter",
+            "url": "https://twitter.com/RUGRATS_RGS"
+        
+        }
+    ]
 }
