@@ -213,7 +213,7 @@ export class CheckoutSystem {
       c.timer += dt * speed;
       if (c.phase === 'scan') {
         const next = c.items.find((i) => !i.scanned);
-        if (next && c.timer > 1.25) {
+        if (next && c.timer > 0.85) {
           c.timer = 0;
           this.scan(c, next);
         } else if (!next && c.timer > 0.4) {
@@ -228,13 +228,22 @@ export class CheckoutSystem {
   }
 
   private updateSelf(c: Counter, cu: Customer, dt: number) {
-    if (c.helpNeeded) return;
     c.timer += dt;
+    if (c.helpNeeded) {
+      // a cashier on duty comes over to help after a while
+      if (c.timer > 18 && this.g.staff.byRole('cashier').some((e) => e.onDuty)) {
+        c.helpNeeded = false;
+        c.timer = 0;
+        cu.think('🙂');
+      }
+      return;
+    }
     if (c.phase === 'scan') {
       const next = c.items.find((i) => !i.scanned);
-      if (next && c.timer > 2.0) {
+      if (next && c.timer > 1.6) {
         c.timer = 0;
-        if (chance(0.05)) {
+        if (cu.needsHelp && c.items.filter((i) => i.scanned).length === Math.floor(c.items.length / 2)) {
+          cu.needsHelp = false;
           c.helpNeeded = true;
           cu.think('🙋');
           this.g.ui.toast('A customer needs help at the self-checkout', 'info', '🙋');

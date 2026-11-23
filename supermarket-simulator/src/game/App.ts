@@ -98,6 +98,7 @@ export async function startApp(canvas: HTMLCanvasElement) {
   const quality: Quality = settings.quality === 'auto' ? detectQuality() : settings.quality;
   const game = new Game(canvas, uiRoot, quality);
   (window as any).game = game;
+  (window as any).__allProducts = PRODUCTS;
   progress(0.5, 'Photographing products…');
   await nextFrame();
   renderAllIcons(game.engine.renderer);

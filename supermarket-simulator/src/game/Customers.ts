@@ -48,6 +48,8 @@ export class Customer {
   spent = 0;
   returning = false;
   coupon = 0;
+  wantsWC = false;
+  needsHelp = false;
 
   constructor(public g: Game, seed: number) {
     const look = randomLook(seed);
@@ -152,7 +154,7 @@ export class CustomerSystem {
     const g = this.g;
     const c = new Customer(g, this.seed++);
     const fromLeft = chance(0.5);
-    const x = fromLeft ? rand(-34, -22) : rand(70, 86);
+    const x = shopper ? (fromLeft ? rand(-16, -4) : rand(26, 42)) : fromLeft ? rand(-34, -22) : rand(70, 86);
     const z = rand(1.6, 4.4);
     c.agent.pos.set(x, 0, z);
     c.exitX = fromLeft ? rand(70, 86) : rand(-34, -22);
@@ -161,6 +163,8 @@ export class CustomerSystem {
     c.patience = CONFIG.maxQueuePatienceSec * rand(0.8, 1.4);
     c.pay = chance(0.65) ? 'card' : 'cash';
     if (chance(0.12)) c.coupon = pick([0.5, 1, 1, 1.5, 2]);
+    c.wantsWC = chance(0.06);
+    c.needsHelp = chance(0.07);
     const sec = (g.state.upgrades.includes('cameras') ? 0.5 : 1) * 0.025;
     c.shoplifter = shopper && g.state.level >= 6 && chance(sec);
     if (shopper) {
@@ -400,7 +404,7 @@ export class CustomerSystem {
     const a = c.agent;
     c.current = null;
     // restroom visit
-    if (!c.usedWC && g.building.hasRoom('custwc') && g.building.isPlot(0, 2) && chance(0.05)) {
+    if (c.wantsWC && !c.usedWC && g.building.hasRoom('custwc') && g.building.isPlot(0, 2) && c.basket.length > 0) {
       c.usedWC = true;
       c.setState('wc');
       a.goTo(-1.8, -24.5, g.nav);

@@ -41,6 +41,8 @@ export class Employee {
   statusT = 0;
   carrying: BoxRT | null = null;
   nextWC = rand(90, 240);
+  /** Energy level at which this person takes a break (staggered between employees). */
+  breakAt = rand(16, 32);
   constructor(public s: EmployeeState, private g: Game) {}
 
   get role() { return ROLE_MAP.get(this.s.role)!; }
@@ -270,7 +272,10 @@ export class StaffSystem {
         g.sim.wagesToday += (es.wage / 60) * dt * (s.phase === 'prep' ? 0 : g.sim.clockRate());
         // energy
         es.energy = Math.max(0, es.energy - dt * g.sim.clockRate() * 0.28 * (1.2 - es.skill * 0.05));
-        if (es.energy < 22 && !e.carrying) {
+        const onBreak = this.list.filter((o) => o !== e && o.s.role === es.role && o.status === 'break').length;
+        const sameRole = this.list.filter((o) => o.s.role === es.role && o.onDuty).length;
+        const breakOk = es.energy < 8 || onBreak < Math.max(1, Math.floor(sameRole / 2));
+        if (es.energy < e.breakAt && !e.carrying && breakOk) {
           this.release(e);
           e.status = 'break';
           e.statusT = 0;
