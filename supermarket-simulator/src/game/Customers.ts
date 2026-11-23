@@ -47,6 +47,7 @@ export class Customer {
   impulse = 0;
   spent = 0;
   returning = false;
+  coupon = 0;
 
   constructor(public g: Game, seed: number) {
     const look = randomLook(seed);
@@ -159,6 +160,7 @@ export class CustomerSystem {
     c.sensitivity = rand(0.6, 1.5);
     c.patience = CONFIG.maxQueuePatienceSec * rand(0.8, 1.4);
     c.pay = chance(0.65) ? 'card' : 'cash';
+    if (chance(0.12)) c.coupon = pick([0.5, 1, 1, 1.5, 2]);
     const sec = (g.state.upgrades.includes('cameras') ? 0.5 : 1) * 0.025;
     c.shoplifter = shopper && g.state.level >= 6 && chance(sec);
     if (shopper) {

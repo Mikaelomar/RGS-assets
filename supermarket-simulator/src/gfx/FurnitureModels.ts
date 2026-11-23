@@ -44,8 +44,8 @@ export function shelfUnit(w: number, d: number, h: number, levels: number[], opt
   // perforated look: small dots on back panel
   // uprights
   for (const sx of [-1, 1]) {
-    f.m.boxB(0.04, h, opts.double ? d : 0.06, STEEL_D, sx * (w / 2 - 0.02), 0, opts.double ? 0 : -d / 2 + 0.05);
-    f.s.boxB(0.02, h, d - 0.02, '#e6eaee', sx * (w / 2 - 0.01), 0, 0);
+    f.m.boxB(0.035, h - 0.01, opts.double ? d - 0.06 : 0.05, STEEL_D, sx * (w / 2 - 0.045), 0, opts.double ? 0 : -d / 2 + 0.05);
+    f.s.boxB(0.018, h, d - 0.02, '#e6eaee', sx * (w / 2 - 0.009), 0, 0);
   }
   const sides = opts.double ? [1, -1] : [1];
   for (const side of sides) {

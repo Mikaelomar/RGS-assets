@@ -45,6 +45,7 @@ export class CheckoutSystem {
   private raycaster = new THREE.Raycaster();
   private group = new THREE.Group();
   savedCam: { pos: THREE.Vector3; quat: THREE.Quaternion } | null = null;
+  private servedHere = 0;
 
   constructor(private g: Game) {
     g.scene.add(this.group);
@@ -217,6 +218,7 @@ export class CheckoutSystem {
           this.scan(c, next);
         } else if (!next && c.timer > 0.4) {
           c.phase = 'pay';
+          this.applyCoupon(c);
           c.timer = 0;
         }
       } else if (c.phase === 'pay' && c.timer > 2.2) {
@@ -242,6 +244,7 @@ export class CheckoutSystem {
         this.scan(c, next);
       } else if (!next && c.timer > 0.5) {
         c.phase = 'pay';
+        this.applyCoupon(c);
         c.timer = 0;
       }
     } else if (c.phase === 'pay' && c.timer > 2.5) {
@@ -325,7 +328,7 @@ export class CheckoutSystem {
     const g = this.g;
     const cu = c.serving;
     if (!cu) return;
-    const total = round2(cu.basket.reduce((a, b) => a + b.price, 0));
+    const total = round2(Math.max(0, c.scannedTotal || cu.basket.reduce((a, b) => a + b.price, 0)));
     const center = c.f.box.getCenter(new THREE.Vector3());
     let mul = 1;
     if (g.state.upgrades.includes('loyalty')) mul += 0.05;
@@ -360,7 +363,10 @@ export class CheckoutSystem {
         g.ui.floaty(center.clone().add(new THREE.Vector3(0, 0.4, 0)), `Tip +$${tip.toFixed(2)}`, 'gold');
       }
     }
-    if (!o.byStaff) g.actions.gainXP(cu.basket.length * 1 + 3 + (o.exact ? 2 : 0), center);
+    if (!o.byStaff) {
+      g.actions.gainXP(cu.basket.length * 1 + 3 + (o.exact ? 2 : 0), center);
+      this.servedHere++;
+    }
     else g.actions.gainXP(cu.basket.length * 0.6 + 1);
     cu.spent = revenue;
     audio.play('chaching', center, 0.8);
@@ -374,6 +380,20 @@ export class CheckoutSystem {
     cu.basket = [];
     g.customers.finishVisit(cu);
     if (this.active === c) this.refreshUI();
+  }
+
+  /** Some customers bring a coupon: shown on the register and deducted from the total. */
+  private applyCoupon(c: Counter) {
+    const cu = c.serving;
+    if (!cu || cu.coupon <= 0 || c.lines.some((l) => l.name === 'COUPON')) return;
+    const v = round2(Math.min(cu.coupon, c.scannedTotal * 0.25));
+    if (v <= 0) return;
+    c.lines.push({ name: 'COUPON', price: -v });
+    c.scannedTotal = round2(c.scannedTotal - v);
+    if (this.active === c) {
+      this.refreshScreen();
+      this.g.ui.toast(`Customer used a coupon: -${money(v)}`, 'info', '🎟️', 2000);
+    }
   }
 
   // ------------------------------------------------------------------ player mode
@@ -407,6 +427,9 @@ export class CheckoutSystem {
   leave() {
     const g = this.g;
     if (!this.active) return;
+    const served = this.servedHere;
+    this.servedHere = 0;
+    if (served >= 2) setTimeout(() => g.ads.maybeInterstitial('checkout'), 400);
     this.closePad();
     this.closeDrawer();
     this.active = null;
@@ -474,6 +497,8 @@ export class CheckoutSystem {
       }
       if (c.items.length && c.items.every((i) => i.scanned) && c.phase === 'scan') {
         c.phase = 'pay';
+        this.applyCoupon(c);
+        this.refreshScreen();
         const cu = c.serving!;
         if (cu.pay === 'cash') c.cashGiven = cashGivenFor(c.scannedTotal);
         audio.play('drawer', c.f.box.getCenter(new THREE.Vector3()), 0.5);

@@ -140,6 +140,7 @@ export class Actions {
         if (kind === 'trash') return { text: 'Pick up trash bag', icon: '🗑️', label: 'Pick up' };
         if (kind === 'litter') return { text: 'Pick up litter', icon: '🧻', label: 'Pick up' };
         if (kind === 'furniture') return { text: `Pick up ${FURN_MAP.get(b.s.furn!)!.name} (flat-pack)`, sub: 'Carry it where you want it and assemble', icon: '📦', label: 'Pick up' };
+        if (kind === 'pallet') return g.state.upgrades.includes('palletjack') ? { text: 'Move the pallet with the pallet jack', sub: `${g.boxes.ridersOf(b).length} boxes on it`, icon: '🛻', label: 'Move' } : { text: 'Pallet', sub: 'Buy the Pallet Jack upgrade to move whole pallets', icon: '🪵', label: '' };
         const p = b.def!;
         const expTxt = p.shelfLife && b.s.count > 0 ? ` · best before day ${b.s.exp}` : '';
         return { text: `Pick up ${p.name}`, sub: b.s.count > 0 ? `${b.s.count} items${expTxt}` : 'Empty box', icon: '✋', label: 'Pick up' };
@@ -313,15 +314,22 @@ export class Actions {
   update(dt: number) {
     const g = this.g;
     const input = g.input;
+    const hud = g.ui.hud;
     if (g.mode !== 'walk') {
       g.ui.hud.setPrompt(null);
       g.ui.hud.setHold(null);
       return;
     }
+    if (g.pushing) {
+      hud.setPrompt('Pushing a pallet', 'Tap ✋ or ⤵️ to set it down', false, 'E');
+      hud.setAction('🛻', 'Release', true);
+      hud.showDrop(true);
+      if (input.wasPressed('action') || input.wasPressed('drop')) g.releasePallet();
+      return;
+    }
     this.target = this.pick();
     this.info = this.target ? this.prompt(this.target) : null;
     const info = this.info;
-    const hud = g.ui.hud;
     if (info) {
       hud.setPrompt(info.text, info.sub, !!info.warn, info.label ? (info.hold ? 'Hold E' : 'E') : undefined);
       hud.setAction(info.icon, info.label, !!info.label && !info.warn);
@@ -435,7 +443,10 @@ export class Actions {
     const c = this.carry;
     switch (t.t) {
       case 'box':
-        if (!c && kind === 'tap') g.pickUp(t.box);
+        if (!c && kind === 'tap') {
+          if (t.box.s.kind === 'pallet') g.grabPallet(t.box);
+          else g.pickUp(t.box);
+        }
         return;
       case 'slot':
         return this.actSlot(t.ref, kind);

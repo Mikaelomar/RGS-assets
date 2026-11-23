@@ -21,7 +21,9 @@ interface Truck {
   x: number;
   phase: 'in' | 'unload' | 'out';
   t: number;
-  queue: { pid?: string; fid?: string }[];
+  queue: { pid?: string; fid?: string; pallet?: boolean }[];
+  pallet?: THREE.Vector3;
+  onPallet?: number;
   speed: number;
   wheels: THREE.Object3D[];
 }
@@ -157,7 +159,9 @@ export class OrderSystem {
   private spawnTruck(o: OrderState) {
     const g = this.g;
     const root = this.buildTruck();
-    const queue: { pid?: string; fid?: string }[] = [];
+    const queue: { pid?: string; fid?: string; pallet?: boolean }[] = [];
+    const boxesCount = o.lines.filter((l) => l.pid).reduce((a, l) => a + l.qty, 0);
+    if (g.state.upgrades.includes('palletjack') && boxesCount >= 3) queue.push({ pallet: true });
     for (const l of o.lines) for (let i = 0; i < l.qty; i++) queue.push(l.pid ? { pid: l.pid } : { fid: l.fid });
     const tr: Truck = { root, order: o, x: 130, phase: 'in', t: 0, queue, speed: 11, wheels: [] };
     root.position.set(tr.x, STREET.roadY, STREET.laneNear);
@@ -206,7 +210,7 @@ export class OrderSystem {
     tr.root.position.set(tr.x, STREET.roadY, STREET.laneNear);
   }
 
-  private dropItem(tr: Truck, item: { pid?: string; fid?: string }) {
+  private dropItem(tr: Truck, item: { pid?: string; fid?: string; pallet?: boolean }) {
     const g = this.g;
     const dock = g.state.upgrades.includes('loadingdock') && g.building.hasRoom('storage');
     let x: number, z: number;
@@ -219,6 +223,23 @@ export class OrderSystem {
       z = DELIVERY_SPOT.z + rand(-1.1, 1.3);
     }
     const uid = nextUid();
+    if (item.pallet) {
+      const px = dock ? -4.5 : DELIVERY_SPOT.x + 1.0, pz = dock ? -2.2 : DELIVERY_SPOT.z;
+      tr.pallet = new THREE.Vector3(px, 0, pz);
+      tr.onPallet = 0;
+      g.addBoxState({ uid, pid: 'apple', count: 0, exp: 0, x: px, y: 0.02, z: pz, ry: 0, kind: 'pallet' });
+      audio.play('thud', tr.pallet, 0.7);
+      return;
+    }
+    if (tr.pallet && item.pid && (tr.onPallet ?? 0) < 8) {
+      const k = tr.onPallet!++;
+      x = tr.pallet.x + ((k % 2) - 0.5) * 0.56;
+      z = tr.pallet.z + ((Math.floor(k / 2) % 2) - 0.5) * 0.46;
+      const p = PRODUCT_MAP.get(item.pid)!;
+      g.addBoxState({ uid, pid: p.id, count: p.perBox, exp: p.shelfLife ? g.state.day + p.shelfLife : 0, x, y: 0.6 + Math.floor(k / 4) * 0.5, z, ry: 0, kind: 'box' }, new THREE.Vector3(0, -0.5, 0));
+      audio.play('thud', new THREE.Vector3(x, 0, z), 0.6);
+      return;
+    }
     if (item.pid) {
       const p = PRODUCT_MAP.get(item.pid)!;
       const size = boxSizeFor(p);

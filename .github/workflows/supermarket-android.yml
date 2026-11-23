@@ -1,0 +1,50 @@
+name: Supermarket Life - Android build
+
+on:
+  push:
+    paths:
+      - 'supermarket-simulator/**'
+      - '.github/workflows/supermarket-android.yml'
+  workflow_dispatch:
+
+jobs:
+  apk:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: supermarket-simulator
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+          cache-dependency-path: supermarket-simulator/package-lock.json
+
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: 21
+
+      - uses: android-actions/setup-android@v3
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Type check
+        run: npx tsc --noEmit
+
+      - name: Build web game and sync Capacitor
+        run: npm run build && npx cap sync android
+
+      - name: Build debug APK
+        working-directory: supermarket-simulator/android
+        run: chmod +x gradlew && ./gradlew assembleDebug --no-daemon
+
+      - name: Upload APK
+        uses: actions/upload-artifact@v4
+        with:
+          name: SupermarketLife-debug-apk
+          path: supermarket-simulator/android/app/build/outputs/apk/debug/app-debug.apk
+          retention-days: 30

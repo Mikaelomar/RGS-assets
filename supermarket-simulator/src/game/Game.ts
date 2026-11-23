@@ -6,6 +6,7 @@ import { audio } from '../core/Audio';
 import { Daylight } from '../world/Daylight';
 import { City } from '../world/City';
 import { Building } from '../world/Building';
+import { Rain } from '../world/Rain';
 import { Collision } from './Collision';
 import { FurnitureSystem, type FurnRT } from './Furniture';
 import { StockRenderer } from './Stock';
@@ -50,6 +51,7 @@ export class Game {
   daylight: Daylight;
   city: City;
   building: Building;
+  rain: Rain;
   col = new Collision();
   nav: NavGrid;
   furniture: FurnitureSystem;
@@ -77,6 +79,7 @@ export class Game {
   state!: GameState;
   mode: Mode = 'walk';
   carry: BoxRT | null = null;
+  pushing: { pallet: BoxRT; riders: { b: BoxRT; off: THREE.Vector3; y: number }[]; yaw0: number } | null = null;
   private pauseReasons = new Set<string>();
   time = 0;
   private lastT = 0;
@@ -114,6 +117,7 @@ export class Game {
     this.city = new City(this.daylight);
     scene.add(this.city.group);
     this.building = new Building(scene, this.col, this.daylight);
+    this.rain = new Rain(scene);
     this.nav = new NavGrid(this.col, this.building);
     this.furniture = new FurnitureSystem(scene, this.col);
     this.stock = new StockRenderer(scene);
@@ -246,9 +250,10 @@ export class Game {
     if (sim) {
       // player
       const speedPenalty = s.energy < 15 ? 0.7 : 1;
-      this.player.speedMul = speedPenalty * (this.carry ? (this.carry.s.kind === 'furniture' ? 0.75 : 0.9) : 1);
+      this.player.speedMul = speedPenalty * (this.carry ? (this.carry.s.kind === 'furniture' ? 0.75 : 0.9) : 1) * (this.pushing ? 0.72 : 1);
       this.player.update(dt);
       this.onFrameHook(dt);
+      if (this.pushing) this.updatePushing();
       if (this.player.moving) s.energy = Math.max(0, s.energy - dt * (this.input.running ? CONFIG.energyRunDrain : 0) - dt * (this.carry ? CONFIG.energyCarryDrain : 0));
       for (let k = 0; k < this.timeScale; k++) {
         this.sim.update(dt);
@@ -294,6 +299,7 @@ export class Game {
     audio.setLoop('street', outside ? 0.5 : 0.12);
     audio.setLoop('crowd', Math.min(0.5, this.customers.inStore * 0.03));
     audio.setLoop('rain', this.daylight.rain * (outside ? 0.6 : 0.2));
+    this.rain.update(dt, this.engine.camera.position, this.daylight.rain, !outside);
     this.updateHud(dt);
     this.engine.render();
     this.ui.update(dt, this.engine.camera, this.engine.width, this.engine.height);
@@ -394,6 +400,44 @@ export class Game {
       this.boxes.setHeld(rt, true);
       this.refreshHeld();
     }
+  }
+
+  // ------------------------------------------------------------------ pallet jack
+  grabPallet(p: BoxRT) {
+    if (this.carry || this.pushing) return;
+    if (!this.state.upgrades.includes('palletjack')) {
+      this.ui.toast('Buy the Pallet Jack upgrade (Store → Upgrades) to move pallets', 'info', '🛻');
+      return;
+    }
+    const riders = this.boxes.ridersOf(p).map((b) => ({ b, off: b.pos.clone().sub(p.pos), y: b.pos.y }));
+    this.pushing = { pallet: p, riders, yaw0: this.player.yaw };
+    audio.play('pickup');
+    this.ui.toast(`Pallet jack: moving ${riders.length} boxes. Tap ✋ or ⤵️ to set it down.`, 'info', '🛻', 2500);
+  }
+
+  private updatePushing() {
+    const pu = this.pushing!;
+    const fwd = this.player.forward(new THREE.Vector3());
+    let x = this.player.pos.x + fwd.x * 1.3, z = this.player.pos.z + fwd.z * 1.3;
+    [x, z] = this.col.resolveCircle(x, z, 0.55, 0.05, 1.5);
+    const p = pu.pallet;
+    p.pos.set(x, FLOOR_Y, z);
+    p.s.ry = this.player.yaw;
+    this.boxes.sync(p);
+    const dyaw = this.player.yaw - pu.yaw0;
+    const c = Math.cos(dyaw), sn = Math.sin(dyaw);
+    for (const r of pu.riders) {
+      if (r.b.held || !this.boxes.items.has(r.b.s.uid)) continue;
+      r.b.pos.set(x + r.off.x * c + r.off.z * sn, r.y, z - r.off.x * sn + r.off.z * c);
+      r.b.resting = true;
+      this.boxes.sync(r.b);
+    }
+  }
+
+  releasePallet() {
+    if (!this.pushing) return;
+    this.pushing = null;
+    audio.play('thud');
   }
 
   // ------------------------------------------------------------------ racks

@@ -12,7 +12,7 @@ import { FLOOR_Y } from './layout';
 import { makeCanvas } from '../gfx/Textures';
 import { productGeometry, productMaterial } from '../gfx/ProductMeshes';
 
-export type BoxStyle = 'cardboard' | 'crate' | 'cold' | 'trash' | 'litter' | 'furniture';
+export type BoxStyle = 'cardboard' | 'crate' | 'cold' | 'trash' | 'litter' | 'furniture' | 'pallet';
 
 export interface BoxRT {
   s: BoxState;
@@ -69,6 +69,10 @@ function cartonGeometry(w: number, h: number, d: number, style: BoxStyle): THREE
     b.sphere(0.32, '#1f2a24', 0, 0.3, 0, { sy: 0.95, ws: 10, hs: 8 });
     b.cone(0.09, 0.18, '#1f2a24', 0, 0.66, 0, { seg: 7 });
     b.box(0.2, 0.03, 0.03, '#1f2a24', 0, 0.74, 0, { rz: 0.4 });
+  } else if (style === 'pallet') {
+    for (let i = 0; i < 5; i++) b.boxB(w, 0.025, 0.14, '#c9a06a', 0, h - 0.025, -d / 2 + 0.07 + i * ((d - 0.14) / 4));
+    for (const sx of [-w / 2 + 0.05, 0, w / 2 - 0.05]) b.boxB(0.1, h - 0.045, d, '#a77d48', sx, 0.02, 0);
+    for (let i = 0; i < 3; i++) b.boxB(w, 0.02, 0.1, '#b48b56', 0, 0, -d / 2 + 0.05 + i * ((d - 0.1) / 2));
   } else if (style === 'litter') {
     b.sphere(0.05, '#f2f2ee', 0, 0.04, 0, { sx: 1.3, sy: 0.7, ws: 6, hs: 4 });
     b.sphere(0.035, '#e8e3d8', 0.04, 0.03, 0.02, { ws: 5, hs: 4 });
@@ -119,6 +123,7 @@ export function boxDims(s: BoxState): { size: [number, number, number]; style: B
   if (kind === 'trash') return { size: [0.55, 0.75, 0.55], style: 'trash' };
   if (kind === 'litter') return { size: [0.14, 0.08, 0.14], style: 'litter' };
   if (kind === 'furniture') return { size: [1.1, 0.32, 0.8], style: 'furniture' };
+  if (kind === 'pallet') return { size: [1.2, 0.15, 1.0], style: 'pallet' };
   const p = PRODUCT_MAP.get(s.pid)!;
   const style = boxStyleFor(p) as BoxStyle;
   return { size: boxSizeFor(p), style };
@@ -145,7 +150,7 @@ export class BoxSystem {
   tileFor(s: BoxState): THREE.Vector4 {
     let tile: number;
     if (s.kind === 'furniture' && s.furn) tile = furnitureTile(s.furn);
-    else if (s.kind === 'trash' || s.kind === 'litter') return new THREE.Vector4(0, 0, 0.01, 0.01);
+    else if (s.kind === 'trash' || s.kind === 'litter' || s.kind === 'pallet') return new THREE.Vector4(0, 0, 0.01, 0.01);
     else tile = artFor(s.pid).boxTile;
     const r = boxAtlas.rect(tile, 2);
     return new THREE.Vector4(r.u0, r.v0, r.u1 - r.u0, r.v1 - r.v0);
@@ -156,7 +161,7 @@ export class BoxSystem {
     let b = this.buckets.get(key);
     if (!b) {
       const geo = cartonGeometry(size[0], size[1], size[2], style);
-      const mat = style === 'crate' ? this.matCrate : style === 'cold' ? this.matCold : style === 'trash' || style === 'litter' ? this.matPlain : this.matCard;
+      const mat = style === 'crate' ? this.matCrate : style === 'cold' ? this.matCold : style === 'trash' || style === 'litter' || style === 'pallet' ? this.matPlain : this.matCard;
       b = { key, mesh: null as any, owners: [], capacity: 0, geo, mat };
       this.grow(b, 16);
       this.buckets.set(key, b);
@@ -325,9 +330,10 @@ export class BoxSystem {
       if (Math.abs(cz - nz) > 1e-4) rt.vel.z *= -0.2;
       rt.pos.x = cx;
       rt.pos.z = cz;
+      // find support from the current height (before moving) so fast falls can't tunnel through
+      const sup = this.supportHeight(rt);
       rt.pos.y += rt.vel.y * dt;
       rt.s.ry += rt.spin * dt;
-      const sup = this.supportHeight(rt);
       if (rt.pos.y <= sup) {
         rt.pos.y = sup;
         if (rt.vel.y < -2.5) rt.vel.y *= -0.18;
@@ -377,6 +383,25 @@ export class BoxSystem {
       if (o.held || o.s.rack) continue;
       if (Math.abs(o.pos.x - around.x) < radius && Math.abs(o.pos.z - around.z) < radius && o.pos.y > FLOOR_Y + 0.02) o.resting = false;
     }
+  }
+
+  /** Boxes stacked on top of `base` (directly or indirectly). */
+  ridersOf(base: BoxRT): BoxRT[] {
+    const out: BoxRT[] = [];
+    const queue = [base];
+    while (queue.length) {
+      const b = queue.shift()!;
+      const top = b.pos.y + b.size[1];
+      for (const o of this.items.values()) {
+        if (o === base || o.held || o.s.rack || out.includes(o)) continue;
+        if (Math.abs(o.pos.y - top) > 0.06) continue;
+        if (Math.abs(o.pos.x - b.pos.x) < b.size[0] / 2 + 0.05 && Math.abs(o.pos.z - b.pos.z) < Math.max(b.size[0], b.size[2]) / 2 + 0.05) {
+          out.push(o);
+          queue.push(o);
+        }
+      }
+    }
+    return out;
   }
 
   /** A standalone mesh (for the hand-held overlay). */

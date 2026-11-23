@@ -33,6 +33,7 @@ export const UPGRADES: UpgradeDef[] = [
   { id: 'music', name: 'In-store Music', icon: '🎵', level: 3, cost: 150, desc: 'Relaxing background music. Customers are a bit happier and stay longer.' },
   { id: 'express', name: 'Express Delivery Contract', icon: '⚡', level: 5, cost: 300, desc: 'Unlocks express deliveries (arrive in ~10 minutes).' },
   { id: 'flyers', name: 'Flyer Campaign', icon: '📰', level: 6, cost: 400, desc: 'Permanent +10% customers from local advertising.' },
+  { id: 'palletjack', name: 'Pallet Jack', icon: '🛻', level: 10, cost: 600, desc: 'Big deliveries arrive on pallets. Move a whole pallet of boxes at once.' },
   { id: 'scrubber', name: 'Floor Scrubber Machine', icon: '🧽', level: 14, cost: 2500, desc: 'Ride-on scrubber in the maintenance room. Cleans floors 4x faster.' },
   { id: 'led', name: 'LED Lighting', icon: '💡', level: 15, cost: 2500, desc: 'Lighting uses 40% less electricity.' },
   { id: 'loadingdock', name: 'Loading Dock', icon: '🚛', level: 20, cost: 4000, desc: 'Trucks unload directly inside the warehouse.' },

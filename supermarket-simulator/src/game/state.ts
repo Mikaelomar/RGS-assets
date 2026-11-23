@@ -42,7 +42,7 @@ export interface BoxState {
   ry: number;
   rack?: { f: number; spot: number } | null;
   furn?: string;
-  kind?: 'box' | 'trash' | 'furniture' | 'litter';
+  kind?: 'box' | 'trash' | 'furniture' | 'litter' | 'pallet';
 }
 
 export type RoleId = 'cashier' | 'stocker' | 'cleaner' | 'warehouse' | 'security' | 'technician' | 'baker' | 'butcher' | 'deptmanager' | 'manager';

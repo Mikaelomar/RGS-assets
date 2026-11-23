@@ -32,7 +32,7 @@ function createDemoState(): GameState {
   s.tutorial = 99;
   s.open = true;
   s.phase = 'open';
-  s.minutes = 19.9 * 60;
+  s.minutes = 20.55 * 60;
   s.reputation = 4.6;
   s.licenses = CATEGORIES.map((c) => c.id);
   s.rooms = ['storage', 'office', 'corridor', 'breakroom', 'lockers', 'staffwc', 'electrical', 'trashroom'];
