@@ -1,7 +1,7 @@
 {
   "name": "supermarket-simulator",
   "private": true,
-  "version": "1.0.0",
+  "version": "1.2.0",
   "description": "Supermarket Life Simulator - grow a corner shop into a mega hypermarket (Android & iOS)",
   "type": "module",
   "scripts": {

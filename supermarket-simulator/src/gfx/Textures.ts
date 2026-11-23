@@ -429,7 +429,12 @@ export function signTexture(text: string, opts: { bg: string; fg: string; w?: nu
   if (opts.icon) opts.icon(ctx, cx - tw / 2 - iconSpace * 0.55, H * (opts.sub ? 0.4 : 0.5), H * 0.62);
   ctx.fillText(text, cx, H * (opts.sub ? 0.4 : 0.53));
   if (opts.sub) {
-    ctx.font = `${H * 0.2}px 'Nunito', sans-serif`;
+    let subSize = H * 0.2;
+    ctx.font = `800 ${subSize}px 'Nunito', sans-serif`;
+    while (ctx.measureText(opts.sub).width > W * 0.84 && subSize > 8) {
+      subSize *= 0.92;
+      ctx.font = `800 ${subSize}px 'Nunito', sans-serif`;
+    }
     ctx.fillText(opts.sub, W / 2, H * 0.78);
   }
   return toTexture(c, { repeat: false });

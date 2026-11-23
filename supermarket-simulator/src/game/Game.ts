@@ -149,6 +149,7 @@ export class Game {
       this.levelQueue.push(lv);
       this.ui.toast(`Level ${lv}!`, 'good', '⭐');
     });
+    this.sim.on('minute', () => this.checkConstruction());
     this.sim.on('open', (open) => {
       if (open) this.ui.toast('The store is OPEN! Customers are on their way.', 'good', '🔓');
     });
@@ -539,24 +540,47 @@ export class Game {
     const s = this.state;
     const e = EXPANSIONS[index];
     if (!e) return;
+    if (s.construction) {
+      this.ui.toast('Construction is already in progress!', 'info', '🏗️');
+      return;
+    }
     if (s.level < e.level) {
       this.ui.toast(`Expansion requires level ${e.level}`, 'bad', '🔒');
       audio.play('error');
       return;
     }
-    const tierBefore = tierFor(s.plots.length);
-    const ok = await this.ui.confirm('Expand the store', `Build +${e.plots.length * 64} m² of new sales floor for ${money(e.cost, 0)}?`, 'Build it!');
+    const ok = await this.ui.confirm('Expand the store', `Build +${e.plots.length * 64} m² of new sales floor for ${money(e.cost, 0)}? Construction takes about ${Math.round((120 + index * 15) / 60 * 10) / 10} hours.`, 'Build it!');
     if (!ok) return;
     if (!this.sim.pay(e.cost, 'expansion')) return;
-    for (const [c, r] of e.plots) if (!s.plots.includes(`${c},${r}`)) s.plots.push(`${c},${r}`);
+    const buildMin = 120 + index * 15;
+    let doneMin = s.minutes + buildMin;
+    let doneDay = s.day;
+    if (doneMin >= 24 * 60) { doneMin -= 24 * 60; doneDay++; }
+    s.construction = { index, doneDay, doneMin };
     this.rebuildStore();
     audio.play('unlock');
     haptic('heavy');
-    const tierAfter = tierFor(s.plots.length);
-    if (tierAfter > tierBefore) this.ui.toast(`Your store is now a ${TIERS[tierAfter].name}!`, 'good', '🏪', 5000);
-    else this.ui.toast('Store expanded! More room for shelves.', 'good', '🏗️');
-    this.sim.addXP(25 + index * 10);
+    const hh = Math.floor(doneMin / 60), mm = doneMin % 60;
+    this.ui.toast(`Builders are on it! The expansion is ready ${doneDay > s.day ? 'tomorrow' : `at ${hh}:${String(mm).padStart(2, '0')}`} (or when the day ends).`, 'good', '🏗️', 5000);
     this.ads.maybeInterstitial('expansion');
+  }
+
+  /** Called every game minute and at day start: finish pending construction. */
+  checkConstruction(force = false) {
+    const s = this.state;
+    const c = s.construction;
+    if (!c) return;
+    if (!force && (s.day < c.doneDay || (s.day === c.doneDay && s.minutes < c.doneMin))) return;
+    const e = EXPANSIONS[c.index];
+    const tierBefore = tierFor(s.plots.length);
+    for (const [cc, r] of e.plots) if (!s.plots.includes(`${cc},${r}`)) s.plots.push(`${cc},${r}`);
+    s.construction = null;
+    this.rebuildStore();
+    audio.play('levelup');
+    const tierAfter = tierFor(s.plots.length);
+    if (tierAfter > tierBefore) this.ui.toast(`Construction finished! Your store is now a ${TIERS[tierAfter].name}!`, 'good', '🏪', 6000);
+    else this.ui.toast('Construction finished! More room for shelves.', 'good', '🏗️', 5000);
+    this.sim.addXP(25 + c.index * 10);
   }
 
   async tryUnlockRoom(id: RoomId) {
@@ -686,6 +710,7 @@ export class Game {
   private startNextDay() {
     const s = this.state;
     this.sim.startNewDay();
+    this.checkConstruction(true);
     this.staff.dayStart();
     this.events.dayStart();
     this.player.pos.set(6.5, 0, 3.4);

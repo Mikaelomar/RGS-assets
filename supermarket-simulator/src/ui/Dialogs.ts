@@ -7,6 +7,7 @@ import { iconDataURL } from '../gfx/ProductArt';
 import { audio } from '../core/Audio';
 import { titleFor, xpToNext } from '../data/levels';
 import type { DayStats } from '../game/state';
+import type { Customer } from '../game/Customers';
 import { dayProfit, dayCashFlow } from '../game/Sim';
 
 export class Dialogs {
@@ -106,6 +107,43 @@ export class Dialogs {
         rewardBtn,
         h('button', { class: 'btn big green', onclick: () => close() }, `START DAY ${s.day + 1} ▶`)));
     const close = g.ui.modal(`END OF DAY ${d.day} · ${WEEKDAYS[(d.day - 1) % 7].toUpperCase()}`, body, { size: 'medium', color: 'orange', noClose: true, onClose: onContinue });
+  }
+
+  complaint(c: Customer) {
+    const g = this.g;
+    const reasons: Record<string, string> = {
+      missing: 'I could not find half of the things on my list! Your shelves are empty.',
+      expensive: 'Your prices are way too high. I can get this cheaper elsewhere!',
+      dirty: 'This place is dirty. Do you ever clean the floor?',
+      wait: 'I waited forever at the checkout. Hire more cashiers!',
+      expired: 'I found expired food on your shelves. That is disgusting!',
+      change: 'The cashier gave me the wrong change!',
+      refund: 'You refused to refund a faulty product! I want my money back.',
+    };
+    const key = ['refund', 'expired', 'change', 'wait', 'missing', 'dirty', 'expensive'].find((k) => c.notes.has(k)) ?? 'missing';
+    let done = false;
+    const finish = (mood: number, rep: number, cost: number, msg: string, xp: number) => {
+      if (done) return;
+      done = true;
+      close();
+      if (cost > 0) g.sim.spend(cost, 'compensation');
+      c.mood += mood;
+      g.state.reputation = Math.max(0.5, Math.min(5, g.state.reputation + rep));
+      c.agent.human.pose = 'idle';
+      c.think(mood > 10 ? '🙂' : '😤', 2.5);
+      g.ui.toast(msg, mood > 0 ? 'good' : 'bad', mood > 0 ? '🤝' : '😤');
+      if (xp) g.actions.gainXP(xp, c.pos.clone().setY(1.8));
+      g.customers.finishVisit(c, true);
+    };
+    const body = h('div', null,
+      h('div', { class: 'row', style: { flexWrap: 'nowrap', alignItems: 'flex-start' } },
+        h('div', { style: { fontSize: '48px' } }, '😡'),
+        h('div', null, h('div', { class: 'section-title', style: { margin: 0 } }, c.name), h('p', { style: { fontWeight: '800', fontSize: '16px', margin: '4px 0 12px' } }, `“${reasons[key]}”`))),
+      h('div', { class: 'row', style: { justifyContent: 'center' } },
+        h('button', { class: 'btn green', onclick: () => finish(30, 0.04, 5, 'You gave a $5 voucher. The customer is happy again.', 4) }, '🎟️ Give $5 voucher'),
+        h('button', { class: 'btn', onclick: () => finish(12, 0.01, 0, 'You apologized and promised to improve.', 3) }, '🙏 Apologize'),
+        h('button', { class: 'btn red', onclick: () => finish(-10, -0.03, 0, 'The customer leaves furious...', 0) }, '🙅 Not my problem')));
+    const close = g.ui.modal('CUSTOMER COMPLAINT', body, { size: 'medium', color: 'red', onClose: () => { if (!done) finish(0, -0.01, 0, 'The customer walked away.', 0); } });
   }
 
   bankrupt(onRestart: () => void, onLoan: () => void) {

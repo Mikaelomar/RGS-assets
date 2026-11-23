@@ -12,7 +12,7 @@ await page.click('text=NEW GAME'); await page.waitForTimeout(300); await page.cl
 const g = (fn, arg) => page.evaluate(fn, arg);
 await g(() => {
   const G = window.game, S = G.state;
-  S.money = 200000; S.level = 26; S.reputation = 4.2;
+  S.money = 200000; S.level = 26; S.reputation = 4.2; S.tutorialDone = true; G.ui.closeAll();
   S.licenses = ['produce','pantry','snacks','drinks','bakery','dairy','frozen','household','personal','meat','fish'];
   S.rooms = ['storage','office','corridor','breakroom','lockers','staffwc','electrical','trashroom','custwc'];
   S.upgrades.push('palletjack','express','loadingdock','music','flyers','scrubber','led');
@@ -61,7 +61,7 @@ const t0 = Date.now();
 let phase = 0;
 while ((Date.now() - t0) / 1000 < +secs) {
   await page.waitForTimeout(5000);
-  const st = await g(() => { const G = window.game, S = G.state; return { t: Math.round(S.minutes), open: S.open, phase: S.phase, cust: G.customers.list.filter(c => c.shopper).length, served: S.today.served, rev: S.today.revenue, money: Math.round(S.money), staff: G.staff.list.map(e => e.status[0] + (e.task ? e.task.kind[0] : '')).join(''), states: Object.entries(G.customers.list.filter(c=>c.shopper).reduce((a,c)=>{a[c.state]=(a[c.state]||0)+1;return a;},{})).map(([k,v])=>k+v).join(' '), counters: [...G.checkout.counters.values()].map(c => `${c.self?'S':'C'}:${c.phase}:q${c.queue.length}:${c.cashier!==null?'cash':''}${G.checkout.isStaffed(c)?'+':'-'}`).join(' '), boxes: G.boxes.items.size, spills: S.spills.length, outage: G.power.outage, lvl: S.level, dirt: G.cleaning.cleanliness().toFixed(2) }; });
+  const st = await g(() => { const G = window.game, S = G.state; return { t: Math.round(S.minutes), open: S.open, phase: S.phase, cust: G.customers.list.filter(c => c.shopper).length, served: S.today.served, rev: S.today.revenue, money: Math.round(S.money), staff: G.staff.list.map(e => e.status[0] + (e.task ? e.task.kind[0] : '')).join(''), returns: S.stats.returns ?? 0, damaged: S.stats.damaged ?? 0, complain: G.customers.list.filter(c => c.state === "complain").length, states: Object.entries(G.customers.list.filter(c=>c.shopper).reduce((a,c)=>{a[c.state]=(a[c.state]||0)+1;return a;},{})).map(([k,v])=>k+v).join(' '), counters: [...G.checkout.counters.values()].map(c => `${c.self?'S':'C'}:${c.phase}:q${c.queue.length}:${c.cashier!==null?'cash':''}${G.checkout.isStaffed(c)?'+':'-'}`).join(' '), boxes: G.boxes.items.size, spills: S.spills.length, outage: G.power.outage, lvl: S.level, dirt: G.cleaning.cleanliness().toFixed(2) }; });
   console.log(JSON.stringify(st));
   if (phase === 0 && st.t > 11 * 60) { phase = 1; await g(() => { const G = window.game; const f = G.furniture.byDef('fridge_2')[0]; G.power.breakDown(f); G.cleaning.addSpill(12, -9, 'milk'); }); }
   if (phase === 1 && st.t > 13 * 60) { phase = 2; await g(() => { const G = window.game; G.power.startOutage(30); }); }

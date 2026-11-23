@@ -155,6 +155,7 @@ export interface GameState {
   nextUid: number;
   seenTips: string[];
   stats: Record<string, number>;
+  construction?: { index: number; doneDay: number; doneMin: number } | null;
 }
 
 export function newDayStats(day: number): DayStats {

@@ -14,7 +14,7 @@ import { DOORS, tierFor } from './layout';
 import { audio } from '../core/Audio';
 
 export type CState =
-  | 'walkby' | 'approach' | 'enter' | 'basket' | 'shop' | 'reach' | 'toCheckout' | 'queue' | 'counter' | 'leave' | 'exit' | 'wc' | 'steal' | 'caught';
+  | 'walkby' | 'approach' | 'enter' | 'basket' | 'shop' | 'reach' | 'toCheckout' | 'queue' | 'counter' | 'leave' | 'exit' | 'wc' | 'steal' | 'caught' | 'complain';
 
 export interface ListItem { pid: string; qty: number; done: boolean; tried: number; }
 export interface BasketItem { pid: string; exp: number; price: number; from?: SlotRef; }
@@ -50,6 +50,9 @@ export class Customer {
   coupon = 0;
   wantsWC = false;
   needsHelp = false;
+  /** Set for customers who only come to return a product at a staffed checkout. */
+  returnPid: string | null = null;
+  returnReason = '';
 
   constructor(public g: Game, seed: number) {
     const look = randomLook(seed);
@@ -169,6 +172,7 @@ export class CustomerSystem {
     c.shoplifter = shopper && g.state.level >= 6 && chance(sec);
     if (shopper) {
       this.makeList(c);
+      if (g.state.tutorialDone && g.state.level >= 3 && chance(0.04)) this.makeReturner(c);
       const ent = this.entrances();
       const door = ent.reduce((a, b) => (Math.abs(a.x - x) < Math.abs(b.x - x) ? a : b));
       c.setState('approach');
@@ -181,6 +185,24 @@ export class CustomerSystem {
     }
     this.list.push(c);
     return c;
+  }
+
+  /** A customer who comes back to return something they bought earlier. */
+  private makeReturner(c: Customer) {
+    const g = this.g;
+    const stocked = g.shelves.stockedProducts();
+    if (!stocked.length) return;
+    const pid = pick(stocked);
+    const p = PRODUCT_MAP.get(pid)!;
+    c.returnPid = pid;
+    c.returnReason = pick(p.shelfLife ? ['Expired', 'Damaged packaging', 'Tastes off', 'Changed my mind'] : ['Damaged packaging', 'Does not work', 'Wrong item', 'Changed my mind']);
+    c.list = [];
+    c.budget = 0;
+    c.shoplifter = false;
+    c.wantsWC = false;
+    c.needsHelp = false;
+    c.coupon = 0;
+    c.agent.human.setProp('bag', '#ffffff');
   }
 
   private makeList(c: Customer) {
@@ -260,6 +282,10 @@ export class CustomerSystem {
       case 'enter':
         if (a.arrived) {
           this.noticeStore(c);
+          if (c.returnPid) {
+            this.goToCheckout(c);
+            break;
+          }
           const baskets = g.furniture.byDef(c.list.length >= 6 ? 'cart_corral' : 'basket_stand');
           const stand = baskets.length ? baskets.reduce((x, y) => (x.s && y.s && dist(x, a) < dist(y, a) ? x : y)) : null;
           if (stand && c.list.length >= 2) {
@@ -355,6 +381,23 @@ export class CustomerSystem {
           a.goTo(c.exitX, rand(1.6, 4.4), g.nav);
         }
         break;
+      case 'complain': {
+        const pp = g.player.pos;
+        const d = a.pos.distanceTo(new THREE.Vector3(pp.x, a.pos.y, pp.z));
+        a.faceYaw = Math.atan2(pp.x - a.pos.x, pp.z - a.pos.z);
+        if (d > 1.6 && c.stateT % 1.5 < dt) a.goTo(pp.x + (a.pos.x - pp.x) * 0.3, pp.z + (a.pos.z - pp.z) * 0.3, g.nav);
+        if (d < 1.7) {
+          a.stop();
+          a.human.pose = 'angry';
+        }
+        if (c.stateT % 3 < dt) c.think('😡', 2.5);
+        if (c.stateT > 45 || !g.building.isIndoors(pp.x, pp.z) || g.mode === 'checkout') {
+          a.human.pose = 'idle';
+          c.mood -= 5;
+          this.finishVisit(c, true);
+        }
+        break;
+      }
       case 'leave':
         if (a.arrived) {
           c.setState('exit');
@@ -542,11 +585,19 @@ export class CustomerSystem {
     this.finishVisit(c);
   }
 
-  /** Walk out and write a review. */
-  finishVisit(c: Customer) {
+  /** Walk out and write a review (unhappy customers may first come to complain). */
+  finishVisit(c: Customer, noComplaint = false) {
     const g = this.g;
     const a = c.agent;
     if (c.state === 'leave' || c.state === 'exit') return;
+    if (!noComplaint && c.state !== 'complain' && c.mood < 32 && c.notes.size && Math.random() < 0.4 && g.state.tutorialDone && g.mode === 'walk'
+      && g.building.isSales(g.player.pos.x, g.player.pos.z) && !this.list.some((o) => o.state === 'complain')) {
+      c.setState('complain');
+      c.think('😡', 3);
+      g.ui.toast(`${c.name} wants to talk to the manager!`, 'bad', '😡');
+      return;
+    }
+    a.human.pose = a.human.propType === 'cart' ? 'cart' : 'idle';
     this.review(c);
     const ent = this.entrances();
     const door = ent.reduce((x, y) => (Math.abs(x.x - a.pos.x) < Math.abs(y.x - a.pos.x) ? x : y));
@@ -568,6 +619,7 @@ export class CustomerSystem {
       let text: string;
       if (stars >= 4) text = pick(CUSTOMER_REVIEWS.great);
       else if (stars === 3) text = pick(CUSTOMER_REVIEWS.ok);
+      else if (c.notes.has('refund')) text = 'They refused to refund a faulty product. Never again.';
       else if (c.notes.has('missing')) text = 'Shelves were empty! Could not find what I needed.';
       else if (c.notes.has('expensive')) text = 'Way too expensive.';
       else if (c.notes.has('expired')) text = 'Found expired food. Gross.';

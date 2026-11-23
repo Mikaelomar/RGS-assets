@@ -745,3 +745,14 @@ export function computerKiosk(): FurnGeo {
   f.s.boxB(0.38, 0.02, 0.13, '#303030', 0, 0.94, 0.12);
   return f.build();
 }
+
+export function bannerStand(): FurnGeo {
+  const f = new FB();
+  f.m.rbox(0.92, 0.08, 0.32, 0.03, '#9aa5ae', 0, 0.04, 0);
+  // pole behind the banner (+z = back), the printed face looks toward -z (front)
+  f.m.cyl(0.014, 0.014, 2.2, '#b0bac3', 0, 1.1, 0.05, { seg: 6 });
+  f.m.box(0.88, 0.035, 0.035, '#9aa5ae', 0, 2.19, 0.0);
+  f.s.box(0.84, 0.02, 0.03, '#e0e0e0', 0, 0.12, 0.0);
+  f.s.box(0.84, 2.0, 0.006, '#d5d9dc', 0, 1.17, 0.006);
+  return f.build();
+}

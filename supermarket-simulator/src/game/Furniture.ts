@@ -5,6 +5,7 @@ import type { FurnGeo } from '../gfx/FurnitureModels';
 import type { FurnitureState } from './state';
 import type { Collision, Collider } from './Collision';
 import { FLOOR_Y } from './layout';
+import { posterTexture } from '../gfx/Posters';
 
 export interface SlotRT {
   index: number;
@@ -52,6 +53,7 @@ export class FurnitureSystem {
   private mats: Record<Part, THREE.Material>;
   version = 0;
   powerOn = true;
+  private posters = new Map<number, THREE.Mesh>();
 
   constructor(scene: THREE.Scene, private col: Collision) {
     scene.add(this.group);
@@ -165,6 +167,11 @@ export class FurnitureSystem {
     t.owners.pop();
     for (const part of Object.keys(t.meshes) as Part[]) t.meshes[part]!.count = t.owners.length;
     this.col.remove(rt.collider);
+    const pm = this.posters.get(uid);
+    if (pm) {
+      pm.removeFromParent();
+      this.posters.delete(uid);
+    }
     this.items.delete(uid);
     this.version++;
   }
@@ -186,6 +193,19 @@ export class FurnitureSystem {
       const shrink = 0.03;
       if (rt.collider) this.col.move(rt.collider, x0 + shrink, z0 + shrink, x1 - shrink, z1 - shrink);
       else rt.collider = this.col.add(x0 + shrink, z0 + shrink, x1 - shrink, z1 - shrink, 0, def.size[2], 'furniture', rt);
+    }
+    if (def.poster) {
+      let pm = this.posters.get(s.uid);
+      if (!pm) {
+        const mat = new THREE.MeshStandardMaterial({ map: posterTexture(def.poster), roughness: 0.55 });
+        pm = new THREE.Mesh(new THREE.PlaneGeometry(0.84, 2.0), mat);
+        pm.castShadow = true;
+        this.group.add(pm);
+        this.posters.set(s.uid, pm);
+      }
+      pm.position.set(0, 1.17, -0.012).applyMatrix4(rt.matrix);
+      pm.rotation.set(0, s.ry + Math.PI, 0);
+      pm.visible = !rt.hidden;
     }
     // slots
     rt.slots = (def.slots ?? []).map((sd, i) => this.slotFrame(rt, sd, i));

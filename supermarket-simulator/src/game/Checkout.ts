@@ -18,7 +18,7 @@ interface Counter {
   queue: Customer[];
   serving: Customer | null;
   items: BeltItem[];
-  phase: 'idle' | 'walk' | 'scan' | 'pay' | 'done';
+  phase: 'idle' | 'walk' | 'scan' | 'pay' | 'done' | 'return';
   timer: number;
   cashier: number | null; // employee uid
   helpNeeded: boolean;
@@ -40,6 +40,7 @@ export class CheckoutSystem {
   private helpEl!: HTMLElement;
   private padEl: HTMLElement | null = null;
   private drawerEl: HTMLElement | null = null;
+  private retEl: HTMLElement | null = null;
   private padValue = '';
   private given: number[] = [];
   private raycaster = new THREE.Raycaster();
@@ -102,6 +103,7 @@ export class CheckoutSystem {
     for (const c of this.counters.values()) {
       if (c.f.s.broken) continue;
       if (c.self && cu.basket.length > 15) continue;
+      if (c.self && cu.returnPid) continue; // returns need a cashier
       const len = c.queue.length + (c.serving ? 1 : 0);
       let score = len;
       if (c.self) score = len * 1.6 + 0.8 + (c.helpNeeded ? 3 : 0);
@@ -197,6 +199,11 @@ export class CheckoutSystem {
     if (c.phase === 'walk') {
       if (cu.agent.arrived) {
         cu.agent.faceYaw = c.f.s.ry + (c.self ? Math.PI : Math.PI);
+        if (cu.returnPid) {
+          this.startReturn(c, cu);
+          if (this.active === c) this.refreshUI();
+          return;
+        }
         this.placeBelt(c, cu);
         c.phase = 'scan';
         c.timer = 0;
@@ -223,6 +230,9 @@ export class CheckoutSystem {
         }
       } else if (c.phase === 'pay' && c.timer > 2.2) {
         this.complete(c, { exact: true, tipOk: chance(0.5), byStaff: true });
+      } else if (c.phase === 'return' && c.timer > 2.8) {
+        // employees follow store policy: faulty goods are refunded, unopened goods too (good service)
+        this.processReturn(c, true, true);
       }
     }
   }
@@ -375,6 +385,7 @@ export class CheckoutSystem {
     if (!o.byStaff) {
       g.actions.gainXP(cu.basket.length * 1 + 3 + (o.exact ? 2 : 0), center);
       this.servedHere++;
+      if (this.active === c) this.printReceipt(c, cu, revenue);
     }
     else g.actions.gainXP(cu.basket.length * 0.6 + 1);
     cu.spent = revenue;
@@ -389,6 +400,115 @@ export class CheckoutSystem {
     cu.basket = [];
     g.customers.finishVisit(cu);
     if (this.active === c) this.refreshUI();
+  }
+
+  // ------------------------------------------------------------------ returns
+  private startReturn(c: Counter, cu: Customer) {
+    this.clearBelt(c);
+    const pid = cu.returnPid!;
+    const p = PRODUCT_MAP.get(pid)!;
+    const price = this.g.shelves.priceOf(pid);
+    const mesh = new THREE.Mesh(productGeometry(pid), productMaterial());
+    mesh.position.copy(this.beltPos(c, 0, 1));
+    mesh.rotation.y = c.f.s.ry + Math.PI / 2;
+    mesh.scale.setScalar(Math.min(1, Math.min(1.5, 0.12 / Math.max(0.05, Math.max(...p.dims)) + 0.55)));
+    this.group.add(mesh);
+    c.items.push({ mesh, pid, price, scanned: true, anim: 0, from: mesh.position.clone(), to: mesh.position.clone() });
+    c.lines = [{ name: `RETURN ${p.name}`, price: -price }];
+    c.scannedTotal = -price;
+    c.phase = 'return';
+    c.timer = 0;
+    cu.agent.human.pose = 'talk';
+    cu.think('↩️', 3);
+  }
+
+  /** Refund or refuse a returned product. */
+  processReturn(c: Counter, accept: boolean, byStaff: boolean) {
+    const g = this.g;
+    const cu = c.serving;
+    if (!cu || !cu.returnPid || c.phase !== 'return') return;
+    const p = PRODUCT_MAP.get(cu.returnPid)!;
+    const price = Math.abs(c.scannedTotal);
+    const faulty = cu.returnReason !== 'Changed my mind';
+    const center = c.f.box.getCenter(new THREE.Vector3());
+    if (accept) {
+      g.sim.spend(price, 'returns');
+      cu.mood = Math.max(cu.mood, 55) + 15;
+      cu.think('😊', 2.5);
+      g.state.stats.returns = (g.state.stats.returns ?? 0) + 1;
+      let restocked = false;
+      if (!faulty) {
+        // unopened item goes back on a shelf if there is room
+        const ref = g.shelves.slotsFor(p.id).find((r) => r.stock.count < g.shelves.capacity(r, p.id));
+        if (ref) restocked = g.shelves.place(ref, p.id, 1, p.shelfLife ? g.state.day + Math.max(1, Math.floor(p.shelfLife / 2)) : 0) > 0;
+      }
+      audio.play('drawer', center, 0.6);
+      if (!byStaff) g.ui.toast(`Refunded ${money(price)} for ${p.name}${restocked ? ' (put back on the shelf)' : ''}`, 'info', '↩️', 2600);
+    } else {
+      if (faulty) {
+        cu.mood -= 35;
+        cu.notes.add('refund');
+        g.state.reputation = clamp(g.state.reputation - 0.02, 0.5, 5);
+        cu.think('😡', 3);
+      } else {
+        cu.mood -= 10;
+        cu.think('😒', 2.5);
+      }
+      audio.play('error', center, 0.5);
+      if (!byStaff) g.ui.toast(faulty ? 'You refused a faulty product. The customer is furious!' : 'Refund refused: the customer accepts store policy.', faulty ? 'bad' : 'info', '🙅', 2600);
+    }
+    if (!byStaff) g.actions.gainXP(accept || !faulty ? 3 : 1, center);
+    cu.returnPid = null;
+    cu.agent.human.pose = 'idle';
+    this.clearBelt(c);
+    c.serving = null;
+    c.phase = 'idle';
+    c.lines = [];
+    c.scannedTotal = 0;
+    g.customers.finishVisit(cu);
+    if (this.active === c) {
+      this.closeReturn();
+      this.refreshUI();
+    }
+  }
+
+  private openReturn(c: Counter) {
+    if (this.retEl) return;
+    const cu = c.serving!;
+    const faulty = cu.returnReason !== 'Changed my mind';
+    const p = PRODUCT_MAP.get(cu.returnPid!)!;
+    const yes = h('button', { class: 'btn green' }, '✔ REFUND');
+    const no = h('button', { class: 'btn red' }, '✖ REFUSE');
+    yes.addEventListener('pointerdown', (e) => { e.preventDefault(); e.stopPropagation(); audio.play('click'); this.processReturn(c, true, false); });
+    no.addEventListener('pointerdown', (e) => { e.preventDefault(); e.stopPropagation(); audio.play('click'); this.processReturn(c, false, false); });
+    this.retEl = h('div', { class: 'co-return' },
+      h('div', { class: 'rt-title' }, '↩️ PRODUCT RETURN'),
+      h('div', { class: 'rt-item' }, h('span', null, p.name), h('b', null, money(Math.abs(c.scannedTotal)))),
+      h('div', { class: 'rt-reason' }, `“${cu.returnReason}”`),
+      h('div', { class: 'rt-hint' }, faulty ? 'Faulty goods should be refunded.' : 'Unopened item: refund is your choice. It goes back on the shelf.'),
+      h('div', { class: 'rt-btns' }, yes, no));
+    this.retEl.addEventListener('touchstart', (e) => e.stopPropagation(), { passive: true });
+    this.ui?.appendChild(this.retEl);
+  }
+
+  private closeReturn() {
+    this.retEl?.remove();
+    this.retEl = null;
+  }
+
+  private printReceipt(c: Counter, cu: Customer, paid: number) {
+    const lines = c.lines.slice(0, 9);
+    const el = h('div', { class: 'receipt' },
+      h('div', { class: 'rc-head' }, this.g.state.storeName.toUpperCase()),
+      h('div', { class: 'rc-sub' }, `Day ${this.g.state.day} · lane ${c.f.s.laneNo ?? 1}`),
+      ...lines.map((l) => h('div', { class: 'rc-ln' }, h('span', null, l.name.slice(0, 18)), h('span', null, money(l.price)))),
+      c.lines.length > 9 ? h('div', { class: 'rc-ln' }, h('span', null, `… ${c.lines.length - 9} more`), h('span', null, '')) : null,
+      h('div', { class: 'rc-tot' }, h('span', null, 'TOTAL'), h('span', null, money(paid))),
+      h('div', { class: 'rc-sub' }, cu.pay === 'card' ? 'Paid by card ✓' : `Cash ${money(c.cashGiven)}`),
+      h('div', { class: 'rc-sub' }, 'Thank you for shopping!'));
+    this.ui?.appendChild(el);
+    setTimeout(() => el.classList.add('out'), 2600);
+    setTimeout(() => el.remove(), 3300);
   }
 
   /** Some customers bring a coupon: shown on the register and deducted from the total. */
@@ -441,6 +561,7 @@ export class CheckoutSystem {
     if (served >= 2) setTimeout(() => g.ads.maybeInterstitial('checkout'), 400);
     this.closePad();
     this.closeDrawer();
+    this.closeReturn();
     this.active = null;
     this.ui?.remove();
     this.ui = null;
@@ -479,9 +600,15 @@ export class CheckoutSystem {
       this.helpEl.textContent = c.queue.length ? 'Next customer is coming…' : 'No customers. Wait here or press LEAVE.';
       this.closePad();
       this.closeDrawer();
+      this.closeReturn();
       return;
     }
-    if (c.phase === 'walk') this.helpEl.textContent = 'Customer is putting items on the belt…';
+    if (c.phase !== 'return') this.closeReturn();
+    if (c.phase === 'walk') this.helpEl.textContent = cu.returnPid ? 'Customer is coming to return an item…' : 'Customer is putting items on the belt…';
+    else if (c.phase === 'return') {
+      this.helpEl.textContent = 'Product return: refund or refuse?';
+      this.openReturn(c);
+    }
     else if (c.phase === 'scan') this.helpEl.textContent = `Tap each item on the belt to scan it (${c.items.filter((i) => !i.scanned).length} left)`;
     else if (c.phase === 'pay') {
       if (cu.pay === 'card') {

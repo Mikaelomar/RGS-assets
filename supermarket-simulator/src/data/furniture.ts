@@ -2,6 +2,7 @@
 import * as M from '../gfx/FurnitureModels';
 import type { FurnGeo } from '../gfx/FurnitureModels';
 import type { DisplayKind } from './products';
+import { POSTERS } from '../gfx/Posters';
 
 export interface SlotDef {
   x: number; y: number; z: number;
@@ -39,6 +40,8 @@ export interface FurnDef {
   breaks?: boolean;
   /** extra floor clearance in front (m) kept free for customers */
   frontClear?: number;
+  /** roll-up banner poster design id */
+  poster?: string;
 }
 
 function shelfSlots(levels: number[], heights: number[], perLevel: number, w: number, d: number, kind: DisplayKind, zc: number, ry = 0, tilt = 0): SlotDef[] {
@@ -252,6 +255,14 @@ export const FURNITURE: FurnDef[] = [
   { id: 'counter', name: 'Kitchen Counter', desc: '', cat: 'fixed', icon: '🚰', price: 0, level: 1, size: [2.4, 0.6, 0.9], placement: 'fixed', build: () => M.counterCabinet(2.4) },
   { id: 'clock', name: 'Clock', desc: '', cat: 'fixed', icon: '🕒', price: 0, level: 1, size: [0.4, 0.05, 2.4], placement: 'fixed', build: M.wallClock },
 ];
+
+for (const p of POSTERS) {
+  FURNITURE.push({
+    id: 'poster_' + p.id, name: `${p.title} Banner`, desc: 'Roll-up poster banner. Decorations make customers happier.', cat: 'decor', icon: '🖼️',
+    price: p.price, level: p.level, size: [0.95, 0.45, 2.25], placement: 'any', beauty: p.beauty, poster: p.id,
+    build: M.bannerStand,
+  });
+}
 
 export const FURN_MAP = new Map(FURNITURE.map((f) => [f.id, f]));
 export function furn(id: string): FurnDef {

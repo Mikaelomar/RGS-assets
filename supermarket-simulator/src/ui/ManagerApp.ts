@@ -462,7 +462,10 @@ export class ManagerApp {
       kpi('Satisfaction', t.satCount ? `${sat}%` : '—'),
       kpi('Reputation', `${s.reputation.toFixed(2)} ★`),
       kpi('Level', `${s.level} (${Math.floor(s.xp)}/${xpToNext(s.level)} XP)`),
-      kpi('Loan', money(s.loan), s.loan > 0 ? 'neg' : '')));
+      kpi('Loan', money(s.loan), s.loan > 0 ? 'neg' : ''),
+      kpi('Profit 7 days', money(this.periodProfit(7)), this.periodProfit(7) >= 0 ? 'pos' : 'neg'),
+      kpi('Profit 28 days', money(this.periodProfit(28)), this.periodProfit(28) >= 0 ? 'pos' : 'neg'),
+      kpi('Inventory value', money(this.inventoryValue(), 0))));
     // ledger
     wrap.appendChild(h('div', { class: 'section-title' }, `Today (Day ${s.day}, ${clockText(s.minutes)})`));
     const tbl = h('table', { class: 'tbl' });
@@ -496,6 +499,19 @@ export class ManagerApp {
     wrap.appendChild(h('div', { class: 'section-title' }, '📈 All-time'));
     wrap.appendChild(h('div', { class: 'kpis' }, kpi('Days', String(s.totals.days)), kpi('Revenue', money(s.totals.revenue, 0)), kpi('Customers', String(s.totals.customers)), kpi('Items sold', String(s.totals.itemsSold))));
     this.main.appendChild(wrap);
+  }
+
+  private periodProfit(days: number) {
+    const s = this.g.state;
+    return [...s.history.slice(-(days - 1)), s.today].reduce((a, d) => a + dayProfit(d), 0);
+  }
+
+  private inventoryValue() {
+    const g = this.g;
+    let v = 0;
+    for (const ref of g.shelves.refs.values()) if (ref.stock.pid) v += ref.stock.count * PRODUCT_MAP.get(ref.stock.pid)!.cost;
+    for (const b of g.boxes.items.values()) if (b.def && (b.s.kind ?? 'box') === 'box') v += b.s.count * b.def.cost;
+    return v;
   }
 
   // ---------------------------------------------------------------- reviews

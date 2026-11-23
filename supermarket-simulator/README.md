@@ -11,17 +11,18 @@ Ensimmäisen persoonan kauppasimulaattori Androidille ja iPhonelle. Aloitat pien
 - **Oikea kauppa 3D:nä**: katu, autot, jalankulkijat, kauniit talot, päivä- ja yöaika, sade.
 - **Itse tehtävä työ**: nosta laatikoita, kanna niitä, täytä hyllyt tuote kerrallaan (pidä ✋ pohjassa täyttääksesi nopeasti), heitä tyhjät laatikot roskiin tai kierrätykseen.
 - **130 tuotetta** omilla 3D-malleilla ja etiketeillä (hedelmät, leipä, maito, pakasteet, liha, kala, juomat, pesuaineet, olut, lelut…). Tuoretuotteilla on viimeinen käyttöpäivä.
-- **Tilaukset tietokoneelta** (Market): kuorma-auto tuo laatikot lastauspaikalle. Myös kalusteet tulevat pahvilaatikossa ja kootaan itse.
+- **Tilaukset tietokoneelta** (Market): kuorma-auto tuo laatikot lastauspaikalle (myöhemmin lavalla + haarukkavaunu). Myös kalusteet tulevat pahvilaatikossa ja kootaan itse. Joskus toimittaja lähettää väärän tuotteen tai osa tuotteista on rikki – ne hyvitetään.
 - **Hinnoittelu**: katso hintalappua ja muuta hintaa. Liian kalliit tuotteet jäävät myymättä, tarjoukset (-10…-50 %) tuovat asiakkaita.
-- **Asiakkaat**: ostoslistat, budjetit, korit ja kärryt, reagoivat tyhjiin hyllyihin, hintoihin, likaan, jonoihin, rikkinäisiin laitteisiin ja vanhentuneisiin tuotteisiin. Kirjoittavat arvosteluja. Myös myymälävarkaita.
-- **Kassa**: skannaa tuotteet hihnalta (piippaus), kortti (näppäile summa maksupäätteeseen) tai käteinen (anna oikea vaihtoraha → tippiä). Itsepalvelukassat.
+- **Asiakkaat**: ostoslistat, budjetit, korit ja kärryt, kuponit, reagoivat tyhjiin hyllyihin, hintoihin, likaan, jonoihin, rikkinäisiin laitteisiin ja vanhentuneisiin tuotteisiin. Kirjoittavat arvosteluja. Tyytymättömät tulevat valittamaan sinulle (anna lahjakortti, pyydä anteeksi tai käännytä). Myös myymälävarkaita.
+- **Kassa**: skannaa tuotteet hihnalta (piippaus), kortti (näppäile summa maksupäätteeseen) tai käteinen (anna oikea vaihtoraha → tippiä), kuitti tulostuu. Tuotepalautukset (hyvitä tai kieltäydy). Itsepalvelukassat.
 - **Työntekijät** (tasosta 5): kassat, hyllyttäjät, siivoojat, varastotyöntekijät, vartijat, huoltoteknikot, leipurit, lihamestarit, osastopäälliköt ja myymäläpäällikkö (tilaa automaattisesti). Työvuorot, palkat, energia, tauot taukohuoneessa, pukuhuone, WC, koulutus, ylennys, irtisanominen.
 - **Tilat**: varasto + hyllyt, toimisto (kassakaappi), taukohuone (kahvi, välipalat, sohva), pukuhuone, henkilökunnan WC, asiakas-WC, sähkö- ja huoltotila (sulaketaulu, ilmastointi), roska- ja kierrätyshuone (paalain), jäteastia.
 - **Siivous**: lattia likaantuu asiakkaiden mukana, läikät, roskat, täydet roskikset, likaiset WC:t ja kylmäkaappien lasit. Moppi 🧹 ja lattianpesukone.
 - **Sähkö ja kylmälaitteet**: kaapit kuluttavat sähköä, lämpötilat seurataan, rikkinäinen kaappi lämpenee ja ruoka pilaantuu, sähkökatkot ja ylikuormitus (palautus sulaketaululta).
 - **Yllätykset**: juhlapäivät (paljon asiakkaita), helleaalto, pakkanen, putkivuoto, sähkökatko, tuotteen takaisinveto, terveystarkastus, myöhästynyt rekka, sairastunut työntekijä.
-- **Talous**: myynti, ostot, palkat, vuokra, sähkö, vesi, vakuutus, korot, viikoittaiset verot, laina, konkurssi. Päivän yhteenveto ja historiakaavio.
-- **Kasvu**: 12 laajennusta (Corner Shop → Small → Medium → Large Supermarket → Hypermarket → Mega Hypermarket), luvat tuoteryhmille, 20 päivitystä (LED-valot, aurinkopaneelit, generaattori, lastauslaituri…).
+- **Talous**: myynti, ostot, palkat, vuokra, sähkö, vesi, vakuutus, korot, viikoittaiset verot, laina, konkurssi. Päivän yhteenveto, historiakaavio, 7 ja 28 päivän tulos sekä varaston arvo.
+- **Kasvu**: 12 laajennusta (Corner Shop → Small → Medium → Large Supermarket → Hypermarket → Mega Hypermarket) – rakentaminen maksaa ja kestää muutaman pelitunnin, luvat tuoteryhmille, 20 päivitystä (LED-valot, aurinkopaneelit, generaattori, lastauslaituri…).
+- **Julisteet ja mainosbannerit**: 12 erilaista (tasoilla 3–500 avautuvia), parantavat asiakkaiden viihtyvyyttä.
 - **Tasot 1–500** palkintoineen ja titteleineen.
 - **Päivä ja yö**: avaa kauppa kyltistä kun olet valmis, sulje illalla, tee yötyöt ja päätä päivä 🌙.
 - **Tallennus**: automaattitallennus + 3 tallennuspaikkaa.

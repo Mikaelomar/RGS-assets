@@ -455,7 +455,10 @@ export class Building {
           x = (x0 + x1) / 2;
           ry = dir < 0 ? 0 : Math.PI;
         }
-        const tex = T.signTexture('EXPANSION AREA', { bg: '#1c3d5a', fg: '#ffd23f', w: 1024, h: 384, border: '#ffd23f', sub: `Level ${e.level} · ${money(e.cost, 0)}  —  tap to expand` });
+        const building = state.construction && state.construction.index === nextIdx;
+        const tex = building
+          ? T.signTexture('UNDER CONSTRUCTION', { bg: '#f9a825', fg: '#212121', w: 1024, h: 384, border: '#212121', sub: 'Builders are working on your new floor space' })
+          : T.signTexture('EXPANSION AREA', { bg: '#1c3d5a', fg: '#ffd23f', w: 1024, h: 384, border: '#ffd23f', sub: `Level ${e.level} · ${money(e.cost, 0)}  —  tap to expand` });
         const mesh = new THREE.Mesh(new THREE.PlaneGeometry(3.2, 1.2), new THREE.MeshStandardMaterial({ map: tex, roughness: 0.6 }));
         mesh.position.set(x, 2.0, z);
         mesh.rotation.y = ry;

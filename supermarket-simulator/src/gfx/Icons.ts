@@ -4,6 +4,7 @@ import { productGeometry, productMaterial } from './ProductMeshes';
 import { PRODUCTS } from '../data/products';
 import { FURNITURE } from '../data/furniture';
 import { RoomEnvironment } from 'three/examples/jsm/environments/RoomEnvironment.js';
+import { posterTexture } from './Posters';
 
 const cache = new Map<string, string>();
 
@@ -69,6 +70,13 @@ export function renderAllIcons(renderer: THREE.WebGLRenderer, onProgress?: (f: n
     const geo = f.build();
     const g = new THREE.Group();
     for (const part of ['solid', 'metal', 'glass', 'glow'] as const) if (geo[part]) g.add(new THREE.Mesh(geo[part]!, mats[part]));
+    if (f.poster) {
+      const pm = new THREE.Mesh(new THREE.PlaneGeometry(0.84, 2.0), new THREE.MeshBasicMaterial({ map: posterTexture(f.poster) }));
+      pm.position.set(0, 1.17, -0.012);
+      pm.rotation.y = Math.PI;
+      g.add(pm);
+      g.rotation.y = Math.PI; // show the printed front to the icon camera
+    }
     snap(g, 'f:' + f.id, new THREE.Vector3(0.7, 0.55, 1));
     onProgress?.(++n / total);
   }

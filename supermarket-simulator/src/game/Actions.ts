@@ -181,6 +181,8 @@ export class Actions {
         const s = t.sign;
         if (s.kind === 'expansion') {
           const e = EXPANSIONS[s.index];
+          const cons = g.state.construction;
+          if (cons) return { text: 'Construction in progress', sub: `Ready around ${Math.floor(cons.doneMin / 60)}:${String(cons.doneMin % 60).padStart(2, '0')}${cons.doneDay > g.state.day ? ' tomorrow' : ''}`, icon: '🚧', label: 'Info' };
           return { text: `Expand the store (${money(e.cost, 0)})`, sub: g.state.level < e.level ? `Requires level ${e.level}` : `${e.plots.length} new areas (+${e.plots.length * 64} m²)`, icon: '🏗️', label: 'Expand', warn: g.state.level < e.level };
         }
         const room = ROOM_MAP.get(s.room!)!;

@@ -157,6 +157,7 @@ export class Tutorial {
     else if ([...g.furniture.items.values()].some((f) => f.s.broken)) hint = ['🔧', 'Something is broken! Look at it and hold ✋ to repair.'];
     else if (s.spills.length) hint = ['💧', 'There is a spill on the floor. Take the mop 🧹 and clean it.'];
     else if ([...g.furniture.items.values()].some((f) => f.def.interact === 'trash' && (f.s.fill ?? 0) >= 10)) hint = ['🗑️', 'A trash bin is full. Empty it and take the bag to the dumpster.'];
+    else if (s.construction) hint = ['🏗️', `Construction in progress — ready around ${Math.floor(s.construction.doneMin / 60)}:${String(s.construction.doneMin % 60).padStart(2, '0')}${s.construction.doneDay > s.day ? ' tomorrow' : ''}.`];
     else if (s.phase === 'prep') hint = ['🔓', 'The store is closed. Stock up, then open it with the sign at the entrance.'];
     else if (s.phase === 'night' || s.phase === 'closing') hint = ['🌙', 'Closed for today. Restock and clean, then tap 🌙 to end the day.'];
     else {

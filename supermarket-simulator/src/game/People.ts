@@ -31,6 +31,7 @@ export class People {
     if (kind === 'customer') {
       const c = obj as Customer;
       if (c.state === 'steal') return { text: 'Stop the shoplifter!', sub: 'They are leaving without paying', icon: '🚨', label: 'Stop' };
+      if (c.state === 'complain') return { text: `${c.name} has a complaint`, sub: 'Talk to the customer', icon: '😡', label: 'Talk' };
       if (carry) return null;
       const mood = c.mood >= 75 ? '😊' : c.mood >= 50 ? '🙂' : c.mood >= 30 ? '😐' : '😠';
       const left = c.list.filter((x) => !x.done).length;
@@ -47,6 +48,10 @@ export class People {
       const c = obj as Customer;
       if (c.state === 'steal') {
         g.customers.catchThief(c, 'player');
+        return;
+      }
+      if (c.state === 'complain') {
+        g.dialogs.complaint(c);
         return;
       }
       c.mood = Math.min(100, c.mood + 4);

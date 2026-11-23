@@ -2,7 +2,7 @@
 import * as THREE from 'three';
 import type { Game } from './Game';
 import type { OrderLine, OrderState } from './state';
-import { PRODUCT_MAP, boxSizeFor } from '../data/products';
+import { PRODUCT_MAP, PRODUCTS, boxSizeFor } from '../data/products';
 import { FURN_MAP } from '../data/furniture';
 import { CONFIG } from '../data/config';
 import { GeoBuilder } from '../gfx/GeoBuilder';
@@ -231,12 +231,13 @@ export class OrderSystem {
       audio.play('thud', tr.pallet, 0.7);
       return;
     }
+    if (item.pid) item.pid = this.supplierIssues(item.pid);
     if (tr.pallet && item.pid && (tr.onPallet ?? 0) < 8) {
       const k = tr.onPallet!++;
       x = tr.pallet.x + ((k % 2) - 0.5) * 0.56;
       z = tr.pallet.z + ((Math.floor(k / 2) % 2) - 0.5) * 0.46;
       const p = PRODUCT_MAP.get(item.pid)!;
-      g.addBoxState({ uid, pid: p.id, count: p.perBox, exp: p.shelfLife ? g.state.day + p.shelfLife : 0, x, y: 0.6 + Math.floor(k / 4) * 0.5, z, ry: 0, kind: 'box' }, new THREE.Vector3(0, -0.5, 0));
+      g.addBoxState({ uid, pid: p.id, count: this.deliveredCount(p), exp: p.shelfLife ? g.state.day + p.shelfLife : 0, x, y: 0.6 + Math.floor(k / 4) * 0.5, z, ry: 0, kind: 'box' }, new THREE.Vector3(0, -0.5, 0));
       audio.play('thud', new THREE.Vector3(x, 0, z), 0.6);
       return;
     }
@@ -244,11 +245,38 @@ export class OrderSystem {
       const p = PRODUCT_MAP.get(item.pid)!;
       const size = boxSizeFor(p);
       void size;
-      g.addBoxState({ uid, pid: p.id, count: p.perBox, exp: p.shelfLife ? g.state.day + p.shelfLife : 0, x, y: 1.4, z, ry: rand(-0.3, 0.3), kind: 'box' }, new THREE.Vector3(rand(-0.4, 0.4), 0.5, -1.2));
+      g.addBoxState({ uid, pid: p.id, count: this.deliveredCount(p), exp: p.shelfLife ? g.state.day + p.shelfLife : 0, x, y: 1.4, z, ry: rand(-0.3, 0.3), kind: 'box' }, new THREE.Vector3(rand(-0.4, 0.4), 0.5, -1.2));
     } else if (item.fid) {
       g.addBoxState({ uid, pid: 'apple', count: 0, exp: 0, x, y: 1.4, z, ry: rand(-0.2, 0.2), kind: 'furniture', furn: item.fid }, new THREE.Vector3(0, 0.5, -1.0));
     }
     audio.play('thud', new THREE.Vector3(x, 0, z), 0.7);
+  }
+
+  /** Occasionally the supplier sends the wrong product (you keep it, the ordered one is refunded). */
+  private supplierIssues(pid: string): string {
+    const g = this.g;
+    if (g.state.level < 3 || !g.state.tutorialDone || Math.random() > 0.035) return pid;
+    const ordered = PRODUCT_MAP.get(pid)!;
+    const options = PRODUCTS.filter((p) => p.id !== pid && p.category === ordered.category && p.level <= g.state.level + 5);
+    if (!options.length) return pid;
+    const got = options[Math.floor(Math.random() * options.length)];
+    const refund = round2(ordered.cost * ordered.perBox);
+    g.sim.earn(refund, 'refund');
+    g.ui.toast(`Supplier mix-up: got ${got.name} instead of ${ordered.name}. Refunded $${refund.toFixed(2)} - keep and sell the box.`, 'info', '📦', 6000);
+    return got.id;
+  }
+
+  /** Sometimes a few items arrive damaged: they are discarded and the supplier credits them. */
+  private deliveredCount(p: { perBox: number; cost: number; name: string; shape: string }): number {
+    const g = this.g;
+    const fragile = ['eggs', 'jar', 'bottle', 'berries'].includes(p.shape);
+    if (!g.state.tutorialDone || Math.random() > (fragile ? 0.08 : 0.025)) return p.perBox;
+    const broken = Math.min(p.perBox - 1, 1 + Math.floor(Math.random() * 2));
+    const credit = round2(broken * p.cost);
+    g.sim.earn(credit, 'refund');
+    g.state.stats.damaged = (g.state.stats.damaged ?? 0) + broken;
+    g.ui.toast(`${broken} x ${p.name} arrived damaged. Supplier credited $${credit.toFixed(2)}.`, 'info', '💥', 5000);
+    return p.perBox - broken;
   }
 
   /** Store manager auto-ordering. */
