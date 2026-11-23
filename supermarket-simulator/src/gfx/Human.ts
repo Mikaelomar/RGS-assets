@@ -162,8 +162,8 @@ function buildGeometry(l: HumanLook): THREE.BufferGeometry {
   // ---- neck & head
   b.cyl(0.03 * H, 0.033 * H, 0.06 * H, skin, 0, J.neck.y + 0.01 * H, 0, { bone: B.neck, seg: 10 });
   const hy = J.head.y + 0.06 * H;
-  b.sphere(0.062 * H, skin, 0, hy, 0, { bone: B.head, sx: 0.9, sy: 1.08, sz: 0.98, ws: 16, hs: 12 });
-  b.sphere(0.045 * H, skin, 0, hy - 0.032 * H, 0.014 * H, { bone: B.head, sx: 1.0, sy: 0.8, sz: 1.05, ws: 12, hs: 8 }); // jaw
+  b.sphere(0.062 * H, skin, 0, hy, 0, { bone: B.head, sx: 0.9, sy: 1.08, sz: 0.98, ws: 14, hs: 10 });
+  b.sphere(0.045 * H, skin, 0, hy - 0.032 * H, 0.014 * H, { bone: B.head, sx: 1.0, sy: 0.8, sz: 1.05, ws: 10, hs: 6 }); // jaw
   // ears
   b.sphere(0.014 * H, skin, 0.057 * H, hy, 0, { bone: B.head, sx: 0.5, sy: 1.1, ws: 6, hs: 5 });
   b.sphere(0.014 * H, skin, -0.057 * H, hy, 0, { bone: B.head, sx: 0.5, sy: 1.1, ws: 6, hs: 5 });
@@ -185,7 +185,7 @@ function buildGeometry(l: HumanLook): THREE.BufferGeometry {
   }
   // hair
   const hc = l.hair;
-  const cap = (r: number, len: number, sy = 1.08) => b.sphere(r * H, hc, 0, hy + 0.002 * H, -0.006 * H, { bone: B.head, sx: 0.93, sy, sz: 1.0, rx: -0.42, ws: 14, hs: 10, thetaLength: Math.PI * len });
+  const cap = (r: number, len: number, sy = 1.08) => b.sphere(r * H, hc, 0, hy + 0.002 * H, -0.006 * H, { bone: B.head, sx: 0.93, sy, sz: 1.0, rx: -0.42, ws: 12, hs: 7, thetaLength: Math.PI * len });
   switch (l.hairStyle) {
     case 'short': cap(0.066, 0.52); break;
     case 'buzz': cap(0.064, 0.48); break;
@@ -231,13 +231,13 @@ function buildGeometry(l: HumanLook): THREE.BufferGeometry {
     const boneH = side === 'L' ? B.handL : B.handR;
     b.sphere(0.033 * H * W, shirt, ua.x - sx * 0.004 * H, ua.y - 0.006 * H, 0, { bone: boneUA, ws: 10, hs: 8, sy: 0.85 }); // shoulder
     const uaLen = ua.y - fa.y;
-    if (l.longSleeves) b.capsule(0.028 * H * W, uaLen, shirt, (ua.x + fa.x) / 2, (ua.y + fa.y) / 2, 0, { bone: boneUA, radial: 10, cap: 4 });
+    if (l.longSleeves) b.capsule(0.028 * H * W, uaLen, shirt, (ua.x + fa.x) / 2, (ua.y + fa.y) / 2, 0, { bone: boneUA, radial: 8, cap: 3 });
     else {
-      b.capsule(0.026 * H * W, uaLen, skin, (ua.x + fa.x) / 2, (ua.y + fa.y) / 2, 0, { bone: boneUA, radial: 10, cap: 4 });
+      b.capsule(0.026 * H * W, uaLen, skin, (ua.x + fa.x) / 2, (ua.y + fa.y) / 2, 0, { bone: boneUA, radial: 8, cap: 3 });
       b.cyl(0.033 * H * W, 0.03 * H * W, uaLen * 0.5, shirt, ua.x, ua.y - uaLen * 0.2, 0, { bone: boneUA, seg: 10 });
     }
     const faLen = fa.y - hd.y;
-    b.capsule(0.022 * H, faLen, l.longSleeves ? shirt : skin, (fa.x + hd.x) / 2, (fa.y + hd.y) / 2, 0.002 * H, { bone: boneFA, radial: 9, cap: 4 });
+    b.capsule(0.022 * H, faLen, l.longSleeves ? shirt : skin, (fa.x + hd.x) / 2, (fa.y + hd.y) / 2, 0.002 * H, { bone: boneFA, radial: 8, cap: 3 });
     if (l.longSleeves) b.cyl(0.022 * H, 0.022 * H, 0.012 * H, skin, hd.x, hd.y + 0.004 * H, 0.003 * H, { bone: boneFA, seg: 8 });
     b.sphere(0.026 * H, skin, hd.x, hd.y - 0.035 * H, 0.006 * H, { bone: boneH, sx: 0.55, sy: 1.25, sz: 0.95, ws: 8, hs: 7 });
     b.capsule(0.007 * H, 0.025 * H, skin, hd.x - sx * 0.002 * H, hd.y - 0.025 * H, 0.025 * H, { bone: boneH, rx: 0.6, radial: 5, cap: 2 });
@@ -250,9 +250,9 @@ function buildGeometry(l: HumanLook): THREE.BufferGeometry {
     const boneF = side === 'L' ? B.ftL : B.ftR;
     const thLen = th.y - sh.y;
     const legCol = l.skirt ? skin : pants;
-    b.capsule((f ? 0.046 : 0.047) * H * W, thLen, legCol, (th.x + sh.x) / 2, (th.y + sh.y) / 2, 0, { bone: boneT, radial: 10, cap: 4 });
+    b.capsule((f ? 0.046 : 0.047) * H * W, thLen, legCol, (th.x + sh.x) / 2, (th.y + sh.y) / 2, 0, { bone: boneT, radial: 8, cap: 3 });
     const shLen = sh.y - ft.y;
-    b.capsule(0.033 * H, shLen, l.skirt || l.shorts ? skin : pants, (sh.x + ft.x) / 2, (sh.y + ft.y) / 2, 0, { bone: boneS, radial: 9, cap: 4 });
+    b.capsule(0.033 * H, shLen, l.skirt || l.shorts ? skin : pants, (sh.x + ft.x) / 2, (sh.y + ft.y) / 2, 0, { bone: boneS, radial: 8, cap: 3 });
     if (l.shorts) b.cyl(0.052 * H * W, 0.05 * H * W, thLen * 0.55, pants, th.x, th.y - thLen * 0.3, 0, { bone: boneT, seg: 10 });
     b.rbox(0.058 * H, 0.045 * H, 0.15 * H, 0.016 * H, l.shoes, ft.x, ft.y - 0.022 * H, 0.03 * H, { bone: boneF }, 2);
   }

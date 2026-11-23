@@ -30,6 +30,7 @@
     "three": "^0.187.0"
   },
   "devDependencies": {
+    "@capacitor/assets": "^4.0.0",
     "@capacitor/cli": "^8.6.2",
     "@types/three": "^0.187.0",
     "typescript": "^5.9.3",

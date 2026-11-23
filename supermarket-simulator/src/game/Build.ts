@@ -89,6 +89,7 @@ export class BuildMode {
     this.ui = h('div', { class: 'checkout-ui' }, this.msg, bar);
     this.ui.addEventListener('touchstart', (e) => e.stopPropagation(), { passive: true });
     this.g.ui.root.appendChild(this.ui);
+    this.g.ui.hud.showTouchControls(false);
   }
 
   rotate() {
@@ -243,6 +244,7 @@ export class BuildMode {
     this.def = null;
     this.source = null;
     g.mode = 'walk';
+    g.ui.hud.showTouchControls(true);
     g.refreshHeld();
   }
 

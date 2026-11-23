@@ -32,7 +32,7 @@ function createDemoState(): GameState {
   s.tutorial = 99;
   s.open = true;
   s.phase = 'open';
-  s.minutes = 18.6 * 60;
+  s.minutes = 19.9 * 60;
   s.reputation = 4.6;
   s.licenses = CATEGORIES.map((c) => c.id);
   s.rooms = ['storage', 'office', 'corridor', 'breakroom', 'lockers', 'staffwc', 'electrical', 'trashroom'];
@@ -133,6 +133,14 @@ export async function startApp(canvas: HTMLCanvasElement) {
     game.mode = 'menu';
     game.player.locked = true;
     game.ui.hud.setVisible(false);
+    // a lively store right away
+    for (let i = 0; i < 6; i++) {
+      const c = game.customers.spawn(true);
+      c.agent.pos.set(2 + i * 3.5, 0, -2 - (i % 3) * 3);
+      c.setState('enter');
+      c.agent.goTo(c.agent.pos.x + 0.5, c.agent.pos.z - 1, game.nav);
+    }
+    for (let i = 0; i < 4; i++) game.customers.spawn(false).agent.pos.x = -10 + i * 12;
     await menus.showTitle();
   };
 
@@ -180,10 +188,10 @@ export async function startApp(canvas: HTMLCanvasElement) {
     if (!demo) return;
     orbitT += dt;
     const cam = game.engine.camera;
-    const x = 18 + Math.sin(orbitT * 0.07) * 16;
-    cam.position.set(x, 2.4 + Math.sin(orbitT * 0.11) * 0.5, 17.2);
-    cam.lookAt(x * 0.7 + 4, 1.6, -6);
-    game.player.pos.set(x, 0, 12);
+    const x = 16 + Math.sin(orbitT * 0.06) * 13;
+    cam.position.set(x, 3.1 + Math.sin(orbitT * 0.11) * 0.4, 13.5);
+    cam.lookAt(x * 0.8 + 3, 1.7, -5);
+    game.player.pos.set(x, 0, 13.5);
   };
 
   await nativeSetup(

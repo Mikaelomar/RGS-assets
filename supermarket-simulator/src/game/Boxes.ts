@@ -338,11 +338,37 @@ export class BoxSystem {
         if (Math.abs(rt.vel.y) < 0.3 && Math.hypot(rt.vel.x, rt.vel.z) < 0.15) {
           rt.resting = true;
           rt.vel.set(0, 0, 0);
+          this.separate(rt);
           this.version++;
         }
       }
       this.sync(rt);
     }
+  }
+
+  /** Nudge a freshly landed box so it doesn't intersect boxes at the same height. */
+  private separate(rt: BoxRT) {
+    const r = Math.min(rt.size[0], rt.size[2]) * 0.48;
+    for (let iter = 0; iter < 4; iter++) {
+      let moved = false;
+      for (const o of this.items.values()) {
+        if (o === rt || o.held || o.s.rack) continue;
+        if (Math.abs(o.pos.y - rt.pos.y) > 0.05) continue;
+        const ro = Math.min(o.size[0], o.size[2]) * 0.48;
+        const dx = rt.pos.x - o.pos.x, dz = rt.pos.z - o.pos.z;
+        const d = Math.hypot(dx, dz);
+        const min = r + ro;
+        if (d >= min) continue;
+        const nx = d > 1e-3 ? dx / d : Math.random() - 0.5, nz = d > 1e-3 ? dz / d : Math.random() - 0.5;
+        const nl = Math.hypot(nx, nz) || 1;
+        const [x, z] = this.col.resolveCircle(rt.pos.x + (nx / nl) * (min - d + 0.01), rt.pos.z + (nz / nl) * (min - d + 0.01), r, rt.pos.y + 0.05, rt.pos.y + rt.size[1]);
+        rt.pos.x = x;
+        rt.pos.z = z;
+        moved = true;
+      }
+      if (!moved) break;
+    }
+    this.sync(rt);
   }
 
   /** Make boxes that were resting on `rt` fall (after it was picked up). */

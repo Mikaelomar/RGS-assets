@@ -135,7 +135,7 @@ function buildShape(p: ProductDef): THREE.BufferGeometry {
       break;
     case 'potatoBag':
       b.rbox(w, h, d, 0.04, '#b08850', 0, h / 2, 0);
-      for (let i = 0; i < 6; i++) b.sphere(0.04, '#c8a26b', ((i % 3) - 1) * 0.06, h * 0.6, (Math.floor(i / 3) - 0.5) * 0.12, { sy: 0.7, ws: 7, hs: 5 });
+      for (let i = 0; i < 6; i++) b.sphere(0.04, '#c8a26b', ((i % 3) - 1) * 0.06, h * 0.6, (Math.floor(i / 3) - 0.5) * 0.12, { sy: 0.7, ws: 6, hs: 4 });
       b.box(w * 0.7, 0.003, d * 0.5, '#ffffff', 0, h + 0.002, 0, { uv: L, rx: 0 });
       break;
     case 'box': {
@@ -260,7 +260,7 @@ function buildShape(p: ProductDef): THREE.BufferGeometry {
       break;
     case 'eggs':
       b.boxB(w, h * 0.5, d, '#bcaaa4', 0, 0, 0);
-      for (let i = 0; i < 12; i++) b.sphere(0.021, '#d7ccc8', -w / 2 + 0.025 + (i % 6) * (w - 0.05) / 5, h * 0.5, (Math.floor(i / 6) - 0.5) * 0.05, { thetaLength: Math.PI / 2, ws: 8, hs: 4 });
+      for (let i = 0; i < 12; i++) b.sphere(0.021, '#d7ccc8', -w / 2 + 0.025 + (i % 6) * (w - 0.05) / 5, h * 0.5, (Math.floor(i / 6) - 0.5) * 0.05, { thetaLength: Math.PI / 2, ws: 6, hs: 3 });
       b.box(w * 0.5, h * 0.3, 0.002, '#ffffff', 0, h * 0.25, d / 2 + 0.001, { uv: L });
       break;
     case 'cheese': {
@@ -357,6 +357,34 @@ export function productGeometry(id: string): THREE.BufferGeometry {
     g = buildShape(p);
     cache.set(id, g);
   }
+  return g;
+}
+
+const lowCache = new Map<string, THREE.BufferGeometry>();
+const LOOSE = new Set(['apple', 'orange', 'lemon', 'tomato', 'onion', 'avocado', 'pear', 'pepper', 'lettuce', 'watermelon', 'pineapple', 'grapes', 'broccoli', 'ball']);
+
+/** Very cheap stand-in (≈12-20 triangles) used for distant shelves. */
+export function productGeometryLow(id: string): THREE.BufferGeometry {
+  let g = lowCache.get(id);
+  if (g) return g;
+  const p = PRODUCTS.find((x) => x.id === id)!;
+  const b = new GeoBuilder();
+  const [w, h, d] = p.dims;
+  const L = productAtlas.rect(artFor(p.id).tile);
+  if (LOOSE.has(p.shape)) {
+    const geo = new THREE.IcosahedronGeometry(0.5, 0);
+    b.add(geo, p.color, trs(0, h / 2, 0, { sx: w, sy: h, sz: d }), 'white');
+  } else if (['can', 'bottle', 'jar', 'tub', 'cup', 'carton', 'tp'].includes(p.shape)) {
+    const front = sub(L, 0.0, 0.5);
+    b.box(w, h, d, p.label, 0, h / 2, 0, { faces: { pz: front, nz: front } });
+  } else if (['box', 'bag', 'potatoBag', 'blister', 'spray'].includes(p.shape)) {
+    const flat = p.shape === 'box' && h < Math.min(w, d) * 0.7;
+    b.box(w, h, d, p.label, 0, h / 2, 0, flat ? { faces: { py: L } } : { faces: { pz: L, nz: L } });
+  } else {
+    b.box(w, h * 0.9, d, p.color, 0, h * 0.45, 0);
+  }
+  g = b.build()!;
+  lowCache.set(id, g);
   return g;
 }
 

@@ -205,7 +205,7 @@ export class StaffSystem {
       if (inShift && e.status === 'off') {
         e.agent = this.makeAgent(e);
         const fromLeft = chance(0.5);
-        e.agent.pos.set(fromLeft ? -45 : 110, 0, rand(2, 4));
+        e.agent.pos.set(fromLeft ? rand(-30, -24) : rand(70, 78), 0, rand(2, 4));
         const door = g.building.doorById('d_entr1')!;
         e.agent.goTo(door.def.x, -1.8, g.nav);
         e.status = 'arriving';
@@ -214,7 +214,7 @@ export class StaffSystem {
         this.release(e);
         e.status = 'leaving';
         e.statusT = 0;
-        e.agent?.goTo(rand(-45, -40), rand(2, 4), g.nav);
+        e.agent?.goTo(rand(-32, -26), rand(2, 4), g.nav);
       }
       if (!e.agent) continue;
       const a = e.agent;

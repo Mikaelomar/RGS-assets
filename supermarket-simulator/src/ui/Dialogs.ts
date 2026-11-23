@@ -55,9 +55,10 @@ export class Dialogs {
     const close = this.g.ui.modal('SET PRICE', body, { size: 'medium', onClose: () => { g.tutorial.event('price'); g.onDialogClosed(); } });
   }
 
-  levelUp(level: number) {
+  levelUp(level: number, fromLevel = level) {
     const g = this.g;
-    const unlocks = g.sim.unlocks(level);
+    const unlocks = [];
+    for (let l = fromLevel; l <= level; l++) unlocks.push(...g.sim.unlocks(l));
     const list = h('div', { class: 'row', style: { justifyContent: 'center', gap: '6px', maxHeight: '40vh', overflowY: 'auto' } },
       ...unlocks.slice(0, 18).map((u) => h('span', { class: 'tag blue', style: { fontSize: '13px', padding: '4px 8px' } }, `${u.icon} ${u.name}`)));
     const body = h('div', { style: { textAlign: 'center' } },

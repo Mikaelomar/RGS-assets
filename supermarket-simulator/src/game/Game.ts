@@ -272,7 +272,10 @@ export class Game {
       this.building.update(dt, agents);
       this.city.update(dt, [...this.orders.blockers(), { x: this.player.pos.x, z: this.player.pos.z }]);
       // level up dialogs at a calm moment
-      if (this.levelQueue.length && this.mode === 'walk' && !this.ui.modalOpen) this.dialogs.levelUp(this.levelQueue.shift()!);
+      if (this.levelQueue.length && this.mode === 'walk' && !this.ui.modalOpen) {
+        const levels = this.levelQueue.splice(0);
+        this.dialogs.levelUp(levels[levels.length - 1], levels[0]);
+      }
       // autosave
       this.autosaveT -= dt;
       if (this.autosaveT <= 0) {

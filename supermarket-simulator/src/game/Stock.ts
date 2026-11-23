@@ -3,7 +3,7 @@
 import * as THREE from 'three';
 import { PRODUCT_MAP, type ProductDef } from '../data/products';
 import type { SlotDef } from '../data/furniture';
-import { productGeometry, productMaterial } from '../gfx/ProductMeshes';
+import { productGeometry, productGeometryLow, productMaterial } from '../gfx/ProductMeshes';
 import { Rng } from '../core/util';
 
 export interface StockView {
@@ -23,6 +23,8 @@ export interface Layout {
   mats: THREE.Matrix4[];
   frontCount: number;
   capacity: number;
+  /** items drawn when close (hidden back rows are skipped) */
+  nearCount: number;
 }
 
 const STACKABLE = new Set(['box', 'can', 'butter', 'bar', 'eggs', 'tray', 'cheese', 'tp', 'folded', 'jar', 'tub', 'cup', 'blister', 'buns']);
@@ -97,12 +99,14 @@ export function computeLayout(sd: { w: number; d: number; h: number; layout: Slo
       if (mats.length >= maxCap) break;
     }
   }
-  const lay = { mats, frontCount: Math.max(1, frontCount), capacity: mats.length };
+  const fc = Math.max(1, frontCount);
+  const nearCount = sd.layout === 'upright' ? Math.min(mats.length, fc * 2) : mats.length;
+  const lay = { mats, frontCount: fc, capacity: mats.length, nearCount };
   layoutCache.set(key, lay);
   return lay;
 }
 
-interface ProductRender { mesh: THREE.InstancedMesh | null; capacity: number; views: Set<StockView>; }
+interface ProductRender { mesh: THREE.InstancedMesh | null; capacity: number; low: THREE.InstancedMesh | null; lowCap: number; views: Set<StockView>; }
 
 const _m = new THREE.Matrix4();
 
@@ -147,7 +151,7 @@ export class StockRenderer {
       v.pid = pid;
       if (pid) {
         let r = this.renders.get(pid);
-        if (!r) this.renders.set(pid, (r = { mesh: null, capacity: 0, views: new Set() }));
+        if (!r) this.renders.set(pid, (r = { mesh: null, capacity: 0, low: null, lowCap: 0, views: new Set() }));
         r.views.add(v);
       }
     }
@@ -193,39 +197,54 @@ export class StockRenderer {
   private rebuild(pid: string) {
     const r = this.renders.get(pid);
     if (!r) return;
-    let need = 0;
+    let needHi = 0, needLo = 0;
     for (const v of r.views) {
       if (v.hidden || !v.layout || v.count <= 0) continue;
       if (v.lod === 2 && !v.noLod) continue;
       const n = Math.min(v.count, v.layout.capacity);
-      need += v.lod === 1 && !v.noLod ? Math.min(n, v.layout.frontCount) : n;
+      if (v.lod === 1 && !v.noLod) needLo += Math.min(n, v.layout.frontCount);
+      else needHi += Math.min(n, v.layout.nearCount);
     }
-    if (!r.mesh || need > r.capacity) {
-      const cap = Math.max(8, 1 << Math.ceil(Math.log2(Math.max(need, 1))));
-      if (r.mesh) {
-        this.group.remove(r.mesh);
-        r.mesh.dispose();
+    const ensure = (lo: boolean, need: number) => {
+      const cur = lo ? r.low : r.mesh;
+      const cap = lo ? r.lowCap : r.capacity;
+      if (cur && need <= cap) return cur;
+      const ncap = Math.max(8, 1 << Math.ceil(Math.log2(Math.max(need, 1))));
+      if (cur) {
+        this.group.remove(cur);
+        cur.dispose();
       }
-      r.mesh = new THREE.InstancedMesh(productGeometry(pid), productMaterial(), cap);
-      r.mesh.frustumCulled = false;
-      r.mesh.castShadow = false;
-      r.mesh.receiveShadow = this.receiveShadow;
-      r.capacity = cap;
-      this.group.add(r.mesh);
-    }
-    let i = 0;
+      const m = new THREE.InstancedMesh(lo ? productGeometryLow(pid) : productGeometry(pid), productMaterial(), ncap);
+      m.frustumCulled = false;
+      m.castShadow = false;
+      m.receiveShadow = !lo && this.receiveShadow;
+      this.group.add(m);
+      if (lo) { r.low = m; r.lowCap = ncap; } else { r.mesh = m; r.capacity = ncap; }
+      return m;
+    };
+    const hi = needHi > 0 || r.mesh ? ensure(false, needHi) : null;
+    const lo = needLo > 0 || r.low ? ensure(true, needLo) : null;
+    let i = 0, j = 0;
     for (const v of r.views) {
       if (v.hidden || !v.layout || v.count <= 0) continue;
       if (v.lod === 2 && !v.noLod) continue;
       const n = Math.min(v.count, v.layout.capacity);
-      const draw = v.lod === 1 && !v.noLod ? Math.min(n, v.layout.frontCount) : n;
+      const isLo = v.lod === 1 && !v.noLod;
+      const draw = isLo ? Math.min(n, v.layout.frontCount) : Math.min(n, v.layout.nearCount);
+      const target = isLo ? lo! : hi!;
       for (let k = 0; k < draw; k++) {
         _m.multiplyMatrices(v.matrix, v.layout.mats[k]);
-        r.mesh.setMatrixAt(i++, _m);
+        target.setMatrixAt(isLo ? j++ : i++, _m);
       }
     }
-    r.mesh.count = i;
-    r.mesh.instanceMatrix.needsUpdate = true;
+    if (hi) {
+      hi.count = i;
+      hi.instanceMatrix.needsUpdate = true;
+    }
+    if (lo) {
+      lo.count = j;
+      lo.instanceMatrix.needsUpdate = true;
+    }
   }
 
   forceAll() {

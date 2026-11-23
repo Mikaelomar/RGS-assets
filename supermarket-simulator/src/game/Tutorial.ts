@@ -75,7 +75,7 @@ export class Tutorial {
       return null;
     };
     this.steps = [
-      { icon: '👀', text: 'Welcome to your new shop! Drag on the right side of the screen to look around.', done: () => this.lookAcc > 1.6 },
+      { icon: '👀', text: 'Welcome to your new shop! Drag on the right side of the screen to look around.', done: () => this.lookAcc > 0.9 },
       { icon: '🚶', text: 'Use the joystick (left side) to walk to the yellow DELIVERY SPOT.', target: () => new THREE.Vector3(DELIVERY_SPOT.x, 1.2, DELIVERY_SPOT.z), done: () => g.player.pos.distanceTo(new THREE.Vector3(DELIVERY_SPOT.x, 0, DELIVERY_SPOT.z)) < 3.2 },
       { icon: '🍎', text: 'See those apples? Look at the crate and tap ✋ to pick it up!', target: boxOf('apple'), done: () => g.carry?.def?.id === 'apple' || this.flags.has('stock:apple') },
       { icon: '🧺', text: 'Carry the apples inside and place them on the Produce Rack (hold ✋ to fill fast).', target: furn('fruit_rack'), done: () => this.flags.has('stock:apple') && (!g.carry || g.carry.s.count === 0) },
