@@ -1,0 +1,20 @@
+import { chromium } from '/opt/node-tools/node_modules/playwright/index.mjs';
+const browser = await chromium.launch({ args: ['--use-angle=swiftshader', '--enable-unsafe-swiftshader', '--ignore-gpu-blocklist'] });
+const page = await browser.newPage({ viewport: { width: 844, height: 390 } });
+await page.goto('http://localhost:5173/', { waitUntil: 'load' });
+await page.waitForFunction(() => window.game && document.querySelector('.title-screen'), null, { timeout: 60000 });
+await page.waitForTimeout(4000);
+const res = await page.evaluate(() => {
+  const G = window.game;
+  const groups = { city: G.city.group, building: G.building.group, buildingDyn: G.building.dynamic, furniture: G.furniture.group, stock: G.stock.group, boxes: G.boxes.group };
+  const out = {};
+  const count = (o) => { let t = 0, n = 0; o.traverse((m) => { if (!m.isMesh || !m.visible) return; const g = m.geometry; const tri = (g.index ? g.index.count : g.attributes.position.count) / 3; const inst = m.isInstancedMesh ? m.count : 1; t += tri * inst; n++; }); return [Math.round(t / 1000) + 'k', n]; };
+  for (const [k, v] of Object.entries(groups)) out[k] = count(v);
+  let humans = 0; for (const c of G.customers.list) humans += c.agent.human.mesh.geometry.index.count / 3;
+  out.humans = [Math.round(humans / 1000) + 'k', G.customers.list.length];
+  const st = []; G.stock.group.children.forEach((m) => st.push([m.geometry.index.count / 3 * m.count]));
+  out.stockMeshes = G.stock.group.children.length;
+  return out;
+});
+console.log(JSON.stringify(res));
+await browser.close();
