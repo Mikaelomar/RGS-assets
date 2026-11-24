@@ -35,6 +35,7 @@ export class Menus {
       ),
       h('div', { class: 'title-foot' }, h('span', { onclick: () => this.credits() }, 'Credits'), ' · ', h('span', { onclick: () => this.help() }, 'How to play'), !isNative ? ' · ' : null, !isNative ? h('span', { onclick: () => requestFullscreen() }, 'Fullscreen') : null, ` · v${__APP_VERSION__.replace(/\.0$/, '')}`),
     );
+    card.appendChild(h('div', { class: 'rotate-tip' }, '🔄 Turn your phone sideways for the best view'));
     this.titleEl = h('div', { class: 'title-screen' }, card);
     this.titleEl.addEventListener('touchstart', (e) => e.stopPropagation(), { passive: true });
     this.g.ui.root.appendChild(this.titleEl);

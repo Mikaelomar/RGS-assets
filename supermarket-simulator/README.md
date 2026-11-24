@@ -46,6 +46,7 @@ Ensimmäisen persoonan kauppasimulaattori Androidille ja iPhonelle. Aloitat pien
 | 📱 = kaupan hallinta / tilaukset | Tab |
 | 🏗️ = siirrä kalusteita | B (R = kierrä) |
 | ⚙️ = tauko, tallennus, asetukset | Esc |
+| Johtajan kuva tehtäväkortin vieressä = piilota / näytä tehtävä | Klikkaa kuvaa |
 
 ## Testiversion asennus Android-puhelimeen
 

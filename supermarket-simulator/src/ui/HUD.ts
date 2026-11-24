@@ -19,6 +19,9 @@ export class HUD {
   private hintIco: HTMLElement;
   private hintText: HTMLElement;
   private hintProg: HTMLElement;
+  private hintBadge: HTMLElement;
+  /** Task card folded away by tapping the manager's face (remembered between sessions). */
+  private hintCollapsed = false;
   private promptEl: HTMLElement;
   private cross: HTMLElement;
   private mainBtn: HTMLElement;
@@ -64,9 +67,24 @@ export class HUD {
     this.hintText = h('div');
     this.hintProg = h('div', { class: 'progress' });
     this.avatarImg = h('img', { alt: '' }) as HTMLImageElement;
+    this.hintBadge = h('div', { class: 'hbadge' }, '!');
+    const avatar = h('div', { class: 'avatar', title: 'Show / hide the task' }, this.avatarImg, this.hintBadge);
+    // tap the manager's face to fold the task card away (and again to bring it back)
+    avatar.addEventListener('touchstart', (e) => e.stopPropagation(), { passive: true });
+    avatar.addEventListener('click', (e) => {
+      e.stopPropagation();
+      audio.play('click');
+      this.setHintCollapsed(!this.hintCollapsed);
+    });
     this.hintEl = h('div', { class: 'hint hide passive' },
       h('div', { class: 'bubble' }, this.hintIco, h('div', null, this.hintText, this.hintProg)),
-      h('div', { class: 'avatar' }, this.avatarImg));
+      avatar);
+    try {
+      this.hintCollapsed = localStorage.getItem('sm_hint_collapsed') === '1';
+    } catch {
+      this.hintCollapsed = false;
+    }
+    this.hintEl.classList.toggle('collapsed', this.hintCollapsed);
     this.cross = h('div', { class: 'crosshair' });
     this.promptEl = h('div', { class: 'prompt', style: { display: 'none' } });
     this.holdRing = document.createElementNS('http://www.w3.org/2000/svg', 'svg');
@@ -216,10 +234,23 @@ export class HUD {
     if (this.toolBtn.textContent !== icon) this.toolBtn.textContent = icon;
   }
 
+  setHintCollapsed(v: boolean) {
+    this.hintCollapsed = v;
+    this.hintEl.classList.toggle('collapsed', v);
+    this.hintBadge.style.display = 'none';
+    try {
+      localStorage.setItem('sm_hint_collapsed', v ? '1' : '0');
+    } catch {
+      /* storage blocked: keep it for this session only */
+    }
+  }
+
   private hintKey = '';
   setHint(icon: string | null, text = '', progress = '') {
     const k = `${icon}|${text}|${progress}`;
     if (k === this.hintKey) return;
+    // a new task while the card is folded: show a badge on the face
+    if (this.hintCollapsed && icon && text !== this.hintText.textContent) this.hintBadge.style.display = 'block';
     this.hintKey = k;
     if (!icon) {
       this.hintEl.classList.add('hide');

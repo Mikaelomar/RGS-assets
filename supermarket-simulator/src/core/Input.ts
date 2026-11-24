@@ -5,7 +5,7 @@ export type ButtonName = 'action' | 'alt' | 'run' | 'drop' | 'tool';
 interface TouchTrack { id: number; kind: 'move' | 'look'; x0: number; y0: number; x: number; y: number; }
 
 /** Elements that handle their own taps; touches starting on them never steer the game. */
-const CONTROL_SELECTOR = 'button, a, input, select, textarea, label, .btn, .btn-round, .sidebtn, .pill, .overlay, .window, .title-screen, .pospad, .drawer, .co-return, .co-leave, .subtab, .card, [data-control]';
+const CONTROL_SELECTOR = 'button, a, input, select, textarea, label, .btn, .btn-round, .sidebtn, .pill, .avatar, .overlay, .window, .title-screen, .pospad, .drawer, .co-return, .co-leave, .subtab, .card, [data-control]';
 
 export class Input {
   readonly isTouch: boolean;
