@@ -620,7 +620,10 @@ export class CheckoutSystem {
       this.helpEl.textContent = 'Product return: refund or refuse?';
       this.openReturn(c);
     }
-    else if (c.phase === 'scan') this.helpEl.textContent = `Tap each item on the belt to scan it (${c.items.filter((i) => !i.scanned).length} left)`;
+    else if (c.phase === 'scan') {
+      this.helpEl.textContent = `Tap each item on the belt to scan it (${c.items.filter((i) => !i.scanned).length} left)`;
+      this.g.ui.hud.setAction('📠', 'Scan', true);
+    }
     else if (c.phase === 'pay') {
       if (cu.pay === 'card') {
         this.helpEl.textContent = `Customer pays by CARD: enter ${money(c.scannedTotal)} on the terminal`;

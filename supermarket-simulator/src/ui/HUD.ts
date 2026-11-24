@@ -125,6 +125,8 @@ export class HUD {
     this.side = h('div', { class: 'sidebtns' });
     this.fpsEl = h('div', { class: 'fpsmeter', style: { display: 'none' } });
     this.el = h('div', { class: 'hud-inner' }, top, status, this.hintEl, this.cross, this.holdRing as unknown as HTMLElement, this.promptEl, actions, this.side, this.fpsEl);
+    this.topEl = top;
+    this.statusEl = status;
     parent.appendChild(this.el);
   }
 
@@ -270,6 +272,32 @@ export class HUD {
 
   setVisible(v: boolean) {
     this.el.style.display = v ? '' : 'none';
+  }
+
+  private topEl!: HTMLElement;
+  private statusEl!: HTMLElement;
+  private modeKey = '';
+
+  /** Screen mode for the stylesheet: walk / checkout (+ phase) / build / menu. */
+  setMode(mode: string, phase = '') {
+    const k = mode + phase;
+    if (k === this.modeKey) return;
+    this.modeKey = k;
+    const root = this.el.closest('#ui-root') as HTMLElement | null;
+    if (root) {
+      root.dataset.mode = mode;
+      root.dataset.phase = phase;
+    }
+  }
+
+  /** When the status pills and the top bar would collide (narrow screens), put the top bar on a second row. */
+  checkLayout() {
+    const root = this.el;
+    root.classList.remove('tight');
+    const s = this.statusEl.getBoundingClientRect(), t = this.topEl.getBoundingClientRect();
+    if (!s.width || !t.width) return;
+    const sameRow = s.bottom > t.top + 2 && s.top < t.bottom - 2;
+    if (sameRow && s.right + 6 > t.left) root.classList.add('tight');
   }
 
   showTouchControls(v: boolean) {

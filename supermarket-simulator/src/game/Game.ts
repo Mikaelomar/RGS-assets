@@ -59,6 +59,7 @@ export class Game {
   rain: Rain;
   snow: Snow;
   private seasonT = 0;
+  private layoutT = 0;
   col = new Collision();
   nav: NavGrid;
   furniture: FurnitureSystem;
@@ -179,7 +180,10 @@ export class Game {
     this.ui.hud.onGear = () => this.onPauseMenu();
     this.ui.hud.onMoney = () => this.ads.rewarded('cash');
     this.ui.hud.onEnergy = () => this.ads.rewarded('energy');
-    this.engine.onResize(() => this.ui.hud.showTouchControls(true));
+    this.engine.onResize(() => {
+      if (this.mode !== 'build') this.ui.hud.showTouchControls(true);
+      this.ui.hud.checkLayout();
+    });
   }
 
   // ------------------------------------------------------------------ lifecycle
@@ -268,6 +272,12 @@ export class Game {
   frame(dt: number) {
     this.time += dt;
     this.input.joystick = this.mode === 'walk';
+    this.ui.hud.setMode(this.demo ? 'menu' : this.mode, this.mode === 'checkout' ? this.checkout.active?.phase ?? '' : '');
+    this.layoutT -= dt;
+    if (this.layoutT <= 0) {
+      this.layoutT = 1.5;
+      this.ui.hud.checkLayout();
+    }
     this.input.update();
     const s = this.state;
     const sim = !this.paused;
@@ -293,6 +303,11 @@ export class Game {
       this.power.update(dt);
       this.markers.update(dt);
       if (this.mode === 'walk') this.actions.update(dt);
+      else {
+        // the walking prompt ("Work the register") must not linger over other screens
+        this.ui.hud.setPrompt(null);
+        this.ui.hud.setHold(null);
+      }
       if (this.mode === 'build') this.build.update(dt);
       this.tutorial.update(dt);
       this.missions.update(dt);

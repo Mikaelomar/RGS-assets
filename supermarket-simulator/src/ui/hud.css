@@ -388,3 +388,145 @@
   .toasts { top: calc(160px + var(--safe-t)); max-width: calc(100vw - 24px); }
 }
 .hud .hint.hide .avatar { pointer-events: none; }
+
+/* ---------------- screen modes ---------------- */
+/* checkout and build screens have their own instructions: no task card, no walking buttons */
+#ui-root[data-mode="checkout"] .hint, #ui-root[data-mode="build"] .hint { display: none; }
+#ui-root[data-mode="checkout"] .btn-round.run, #ui-root[data-mode="checkout"] .btn-round.tool, #ui-root[data-mode="checkout"] .btn-round.drop { display: none; }
+/* the big button scans the next item; while paying the terminal / cash drawer take its place */
+#ui-root[data-mode="checkout"]:not([data-phase="scan"]) .actions { display: none; }
+
+/* status pills and top bar collide on narrow screens: top bar moves to a second row */
+.hud-inner.tight .topbar { top: calc(50px + var(--safe-t)); }
+.hud-inner.tight .hint { top: calc(96px + var(--safe-t)); }
+.hud-inner.tight .sidebtns { top: calc(96px + var(--safe-t)); }
+
+/* ---------------- very short screens (landscape phone inside an app, small windows) ---------------- */
+@media (max-height: 360px) {
+  .statusbar, .topbar { top: calc(5px + var(--safe-t)); gap: 5px; }
+  .statusbar { left: calc(6px + var(--safe-l)); }
+  .topbar { right: calc(6px + var(--safe-r)); }
+  .status-open { height: 30px; font-size: 14px; padding: 0 9px; }
+  .minipill { height: 30px; font-size: 14px; padding: 1px 7px; }
+  .minipill .ico { font-size: 15px; width: 18px; }
+  .pill { height: 30px; font-size: 15px; padding: 2px 8px 2px 4px; gap: 4px; }
+  .pill .ico { font-size: 16px; width: 20px; }
+  .pill .plus { left: 13px; bottom: -1px; width: 14px; height: 14px; font-size: 11px; line-height: 11px; border-width: 1.5px; }
+  .gear { width: 32px; font-size: 18px; }
+  .daybox { min-width: 70px; }
+  .daybox .d { font-size: 11px; padding: 1px 5px 0; }
+  .daybox .t { font-size: 13px; padding: 0 5px 1px; }
+  .lvl { min-width: 96px; padding-right: 6px; }
+  .lvl .star { width: 24px; height: 24px; }
+  .lvl .star::before { font-size: 26px; line-height: 24px; }
+  .lvl .star span { font-size: 12px; }
+  .xpbar { min-width: 40px; height: 9px; }
+  .hint { top: calc(42px + var(--safe-t)); right: calc(6px + var(--safe-r)); max-width: min(44vw, 380px); gap: 6px; }
+  .hint .bubble { font-size: 12.5px; padding: 5px 9px; gap: 7px; }
+  .hint .bubble .hico { font-size: 20px; }
+  .hint .avatar { width: 40px; height: 40px; border-width: 2px; }
+  .hint .progress { font-size: 10.5px; margin-top: 1px; }
+  .sidebtns { top: calc(42px + var(--safe-t)); left: calc(6px + var(--safe-l)); gap: 6px; }
+  .sidebtn { width: 42px; height: 42px; font-size: 20px; border-radius: 11px; border-width: 2px; }
+  .sidebtn .badge { right: -5px; top: -5px; min-width: 17px; height: 17px; font-size: 11px; line-height: 15px; }
+  .hud-inner.tight .topbar { top: calc(39px + var(--safe-t)); }
+  .hud-inner.tight .hint, .hud-inner.tight .sidebtns { top: calc(76px + var(--safe-t)); }
+  /* action buttons in one low cluster */
+  .actions { right: calc(8px + var(--safe-r)); bottom: calc(6px + var(--safe-b)); width: 210px; height: 128px; }
+  .btn-round { border-width: 3px; }
+  .btn-round.main { width: 82px; height: 82px; right: 4px; bottom: 18px; font-size: 34px; }
+  .btn-round.main .lbl { bottom: -19px; font-size: 11.5px; }
+  .btn-round.small { width: 46px; height: 46px; font-size: 21px; }
+  .btn-round.run { right: 96px; bottom: 66px; }
+  .btn-round.drop { right: 96px; bottom: 10px; }
+  .btn-round.tool { right: 150px; bottom: 38px; }
+  .prompt { top: calc(50% + 18px); font-size: 14px; padding: 4px 10px; }
+  .prompt .sub { font-size: 11px; }
+  .toasts { top: calc(42px + var(--safe-t)); }
+  .toast { font-size: 13px; padding: 5px 10px; }
+  /* checkout */
+  .co-screen { top: calc(42px + var(--safe-t)); left: calc(6px + var(--safe-l)); width: min(30vw, 210px); padding: 5px 8px; border-width: 3px; }
+  .co-screen .tot { font-size: clamp(15px, 2.9vw, 22px); white-space: nowrap; letter-spacing: 1px; }
+  .co-screen .lines { max-height: 44px; font-size: 10.5px; margin-top: 3px; }
+  .co-leave { top: calc(42px + var(--safe-t)); padding: 7px 12px; font-size: 16px; }
+  .co-help { top: calc(42px + var(--safe-t)); bottom: auto; max-width: min(36vw, 300px); font-size: 13px; padding: 5px 10px; white-space: normal; }
+  .pospad { right: calc(8px + var(--safe-r)); bottom: calc(4px + var(--safe-b)); width: 190px; padding: 6px; border-radius: 12px; }
+  .pospad .disp { font-size: 17px; padding: 1px 8px; margin-bottom: 4px; }
+  .pospad .disp small { font-size: 9px; }
+  .pospad .keys { gap: 3px; }
+  .pospad .keys button { height: 26px; font-size: 15px; box-shadow: 0 2px 0 #1273b8; }
+  .drawer { bottom: calc(4px + var(--safe-b)); padding: 6px 8px; width: min(98vw, 760px); }
+  .drawer .info { font-size: 13px; margin-bottom: 3px; }
+  .drawer .cash { gap: 4px; }
+  .drawer .given { min-height: 18px; margin: 3px 0; }
+  .drawer .given span { font-size: 11px; padding: 1px 5px; }
+  .bill { width: 56px; height: 32px; font-size: 13px; }
+  .coin { width: 34px; height: 34px; font-size: 10px; }
+  .drawer .btn { padding: 5px 12px; font-size: 14px; }
+  .co-return { right: calc(8px + var(--safe-r)); bottom: calc(6px + var(--safe-b)); width: 220px; padding: 8px; }
+  .co-return .rt-title { font-size: 14px; margin-bottom: 3px; }
+  .co-return .rt-item { font-size: 12px; padding: 5px 8px; }
+  .co-return .rt-reason { font-size: 13px; margin-top: 5px; }
+  .co-return .rt-hint { font-size: 10px; margin-bottom: 6px; }
+  .co-return .rt-btns .btn { padding: 6px 4px; font-size: 13px; }
+  .receipt { top: calc(42px + var(--safe-t)); left: calc(12px + var(--safe-l) + min(30vw, 210px)); width: 150px; font-size: 9.5px; padding: 6px 7px 10px; }
+  /* windows */
+  .window .wtitle { font-size: 18px; padding: 3px 44px; }
+  .window .wclose { width: 34px; height: 34px; font-size: 24px; line-height: 32px; }
+  .window .wbody { padding: 8px; }
+  .app-tabs { width: 60px; gap: 4px; padding: 5px 4px; }
+  .app-tab { height: 40px; font-size: 18px; border-radius: 9px; }
+  .app-tab small { font-size: 7.5px; margin-top: -3px; }
+  /* title screen */
+  .title-card { gap: 6px; }
+  .title-logo { font-size: 34px; }
+  .title-sub { font-size: 13px; margin-bottom: 2px; }
+  .title-btns { gap: 5px; }
+  .title-btns .btn.big { font-size: 16px; padding: 6px 16px; min-width: 210px !important; }
+  .title-foot { margin-top: 4px; }
+  .title-meta { font-size: 11px; margin: -2px 0 2px 4px; }
+}
+/* build mode: the message goes to the top so it never sits on the buttons */
+@media (max-height: 360px) {
+  #ui-root[data-mode="build"] .co-help { top: calc(42px + var(--safe-t)); }
+}
+
+/* ---------------- checkout while paying (all sizes) ---------------- */
+/* LEAVE and the instructions go to the top; the terminal / cash drawer own the bottom right */
+.co-screen { width: min(30vw, 270px); }
+.co-screen .tot { white-space: nowrap; font-size: clamp(16px, 3.2vw, 30px); }
+#ui-root[data-mode="checkout"][data-phase="pay"] .co-leave { top: calc(56px + var(--safe-t)); }
+#ui-root[data-mode="checkout"][data-phase="pay"] .co-help { top: calc(56px + var(--safe-t)); bottom: auto; max-width: min(34vw, 360px); white-space: normal; font-size: 15px; }
+#ui-root[data-mode="checkout"][data-phase="pay"] .pospad { right: calc(8px + var(--safe-r)); }
+.drawer { left: auto; right: calc(8px + var(--safe-r)); transform: none; width: min(62vw, 560px); }
+@media (max-height: 430px) {
+  .pospad .keys button { height: 32px; font-size: 17px; }
+  .pospad .disp { font-size: 21px; margin-bottom: 5px; }
+  .bill { width: 70px; height: 38px; font-size: 15px; }
+  .coin { width: 42px; height: 42px; font-size: 12px; }
+}
+@media (max-height: 360px) {
+  .drawer { right: calc(4px + var(--safe-r)); width: min(66vw, 560px); }
+  #ui-root[data-mode="checkout"][data-phase="pay"] .co-leave { top: calc(42px + var(--safe-t)); }
+  #ui-root[data-mode="checkout"][data-phase="pay"] .co-help { top: calc(42px + var(--safe-t)); max-width: min(30vw, 280px); font-size: 12.5px; }
+  #ui-root[data-mode="checkout"][data-phase="pay"] .pospad { right: calc(8px + var(--safe-r)); }
+}
+
+/* ---------------- phone held upright: checkout and build ---------------- */
+@media (orientation: portrait) {
+  .co-screen { top: calc(96px + var(--safe-t)); left: calc(8px + var(--safe-l)); width: 56vw; }
+  .co-screen .tot { font-size: 22px; }
+  .co-screen .lines { max-height: 54px; }
+  .co-leave { top: calc(96px + var(--safe-t)); }
+  .co-help, #ui-root[data-mode="checkout"][data-phase="pay"] .co-help, #ui-root[data-mode="build"] .co-help { top: calc(206px + var(--safe-t)); bottom: auto; left: 50%; transform: translateX(-50%); width: calc(100vw - 16px); max-width: none; white-space: normal; font-size: 14px; }
+  #ui-root[data-mode="checkout"][data-phase="pay"] .co-leave { top: calc(96px + var(--safe-t)); }
+  .drawer { right: calc(4px + var(--safe-r)); width: calc(100vw - 8px); }
+}
+/* (after the 430px block, so the smallest screens keep the smallest terminal and cash) */
+@media (max-height: 360px) {
+  .pospad .keys button { height: 25px; font-size: 15px; }
+  .pospad .disp { font-size: 16px; margin-bottom: 4px; }
+  .bill { width: 56px; height: 32px; font-size: 13px; }
+  .coin { width: 34px; height: 34px; font-size: 10px; }
+}
+#ui-root[data-mode="build"] .sidebtns { display: none; }
