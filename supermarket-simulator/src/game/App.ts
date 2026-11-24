@@ -107,8 +107,19 @@ export async function startApp(canvas: HTMLCanvasElement) {
 
   let demo = true;
   let orbitT = 0;
+  game.engine.onQualityDrop = (q) => {
+    game.daylight.setShadowSize(game.engine.profile.shadowSize);
+    game.stock.receiveShadow = q === 'high';
+    game.stock.forceAll();
+    if (!demo) game.ui.toast(`Graphics lowered to ${q.toUpperCase()} for smoother play`, 'info', '⚙️', 3000);
+  };
   const applySettings = (st: Settings) => {
-    const q: Quality = st.quality === 'auto' ? detectQuality() : st.quality;
+    game.engine.adaptive = st.quality === 'auto' && !/fixedres/.test(location.search);
+    if (st.quality !== 'auto') {
+      game.engine.autoDropped = null;
+      if (game.engine.renderScale !== 1) game.engine.setRenderScale(1);
+    }
+    const q: Quality = st.quality === 'auto' ? game.engine.autoDropped ?? detectQuality() : st.quality;
     if (q !== game.engine.quality) {
       game.engine.setQuality(q);
       game.daylight.setShadowSize(game.engine.profile.shadowSize);

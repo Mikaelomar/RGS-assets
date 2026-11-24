@@ -10,6 +10,7 @@ import { productIcon, furnitureIcon } from '../gfx/Icons';
 import { iconDataURL } from '../gfx/ProductArt';
 import { CONFIG } from '../data/config';
 import { audio } from '../core/Audio';
+import { CAMPAIGNS, daysLeft, launchCampaign } from '../game/Marketing';
 import { dayProfit, dayCashFlow } from '../game/Sim';
 
 type Tab = 'market' | 'prices' | 'staff' | 'store' | 'finance' | 'reviews' | 'orders';
@@ -383,6 +384,24 @@ export class ManagerApp {
         h('button', { class: 'btn small', onclick: () => { const v = nameInput.value.trim(); if (v) { s.storeName = v; g.rebuildStore(); g.ui.toast('Store renamed!', 'good'); } } }, 'Rename'),
         h('span', { class: 'note', style: { marginLeft: '12px' } }, `Opens ${s.openHour}:00 · closes`), closeSel),
     );
+    // marketing
+    const boost = Math.round(s.marketing * 100);
+    wrap.appendChild(h('div', { class: 'section-title' }, `📣 Marketing${boost > 0 ? ` · now +${boost}% customers` : ''}`));
+    const mGrid = h('div', { class: 'grid' });
+    for (const cdef of CAMPAIGNS) {
+      const locked = s.level < cdef.level;
+      const left = daysLeft(s, cdef.id);
+      mGrid.appendChild(h('div', { class: 'card light campaign' + (locked ? ' locked' : '') + (left ? ' running' : ''), style: { minHeight: '0' } },
+        h('div', { class: 'cimg' }, h('span', { class: 'emoji' }, cdef.icon)),
+        h('div', { class: 'cbody' },
+          h('div', { class: 'cname' }, cdef.name),
+          h('div', { class: 'cmeta' }, `${cdef.desc} +${Math.round(cdef.boost * 100)}% customers for ${cdef.days} day${cdef.days > 1 ? 's' : ''}.`),
+          h('div', { class: 'crow' },
+            left ? h('span', { class: 'tag green' }, `RUNNING · ${left} day${left > 1 ? 's' : ''} left`) : h('div', { class: 'cprice' }, money(cdef.cost, 0)),
+            h('div', { class: 'spacer' }),
+            h('button', { class: 'btn small orange' + (locked ? ' disabled' : ''), onclick: () => { if (launchCampaign(g, cdef.id)) this.render(); } }, locked ? `🔒 Lv ${cdef.level}` : left ? `Extend ${money(cdef.cost, 0)}` : 'Launch')))));
+    }
+    wrap.appendChild(mGrid);
     // expansion
     const nextIdx = EXPANSIONS.findIndex((e) => e.plots.some(([c, r]) => !s.plots.includes(`${c},${r}`)));
     wrap.appendChild(h('div', { class: 'section-title' }, '🏗️ Store expansion'));
@@ -396,7 +415,9 @@ export class ManagerApp {
           h('div', { class: 'cname' }, `Expansion ${nextIdx + 1} of ${EXPANSIONS.length}: +${e.plots.length * 64} m²`),
           h('div', { class: 'cmeta' }, `After: ${TIERS[tierFor(after)].name} · more customers, more shelves`),
           h('div', { class: 'crow' }, h('div', { class: 'cprice' }, money(e.cost, 0)), h('div', { class: 'spacer' }),
-            h('button', { class: 'btn small green' + (s.level < e.level ? ' disabled' : ''), onclick: () => { g.tryExpansion(nextIdx); this.close(); } }, s.level < e.level ? `🔒 Level ${e.level}` : 'Expand')))));
+            s.construction
+              ? h('span', { class: 'tag' }, `🚧 Building · ready ${s.construction.doneDay > s.day ? 'tomorrow' : `at ${Math.floor(s.construction.doneMin / 60)}:${String(s.construction.doneMin % 60).padStart(2, '0')}`}`)
+              : h('button', { class: 'btn small green' + (s.level < e.level ? ' disabled' : ''), onclick: () => { g.tryExpansion(nextIdx); this.close(); } }, s.level < e.level ? `🔒 Level ${e.level}` : 'Expand')))));
     }
     // rooms
     wrap.appendChild(h('div', { class: 'section-title' }, '🚪 Rooms'));

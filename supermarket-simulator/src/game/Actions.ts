@@ -479,6 +479,7 @@ export class Actions {
             audio.play('success', t.point, 0.6);
             this.gainXP(4, t.point);
             g.tutorial.event('clean');
+            g.missions.bump('clean');
           }
         }
         return;
@@ -516,6 +517,7 @@ export class Actions {
         haptic('light');
         this.gainXP(0.25);
         g.tutorial.event('stock', p.id);
+        g.missions.bump('restock', n);
         if (c.s.count <= 0) {
           g.ui.toast('Box empty! Throw it in the trash or recycling.', 'info', '📦', 2000);
           g.tutorial.event('boxEmpty');
@@ -573,6 +575,7 @@ export class Actions {
           audio.play('trash', center);
           this.gainXP(1, center);
           g.tutorial.event('trash');
+          g.missions.bump('trash');
         } else if (c && kindC === 'litter' && kind === 'tap') {
           s.fill = Math.min(10, fill + 0.25);
           g.destroyCarry();
@@ -602,10 +605,12 @@ export class Actions {
           audio.play('trash', center);
           this.gainXP(1.5, center);
           g.tutorial.event('trash');
+          g.missions.bump('trash');
         }
         return;
       case 'dumpster':
         if (c && kind === 'tap' && (kindC === 'trash' || kindC === 'litter' || (kindC === 'box' && c.s.count <= 0))) {
+          if (kindC === 'box') g.missions.bump('trash');
           g.destroyCarry();
           audio.play('drop', center);
           this.gainXP(2, center);

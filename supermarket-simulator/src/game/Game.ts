@@ -28,6 +28,8 @@ import { BuildMode } from './Build';
 import { People, Markers } from './People';
 import { Tutorial, drawAvatar } from './Tutorial';
 import { AdManager } from './Ads';
+import { Missions } from './Missions';
+import { recomputeMarketing, activeCampaigns } from './Marketing';
 import { UI } from '../ui/UI';
 import { ManagerApp } from '../ui/ManagerApp';
 import { Dialogs } from '../ui/Dialogs';
@@ -76,6 +78,7 @@ export class Game {
   ads: AdManager;
   app: ManagerApp;
   dialogs: Dialogs;
+  missions: Missions;
   state!: GameState;
   mode: Mode = 'walk';
   carry: BoxRT | null = null;
@@ -143,6 +146,7 @@ export class Game {
     this.ads = new AdManager(this);
     this.app = new ManagerApp(this);
     this.dialogs = new Dialogs(this);
+    this.missions = new Missions(this);
     this.ui.hud.avatarImg.src = drawAvatar();
 
     this.sim.on('levelUp', (lv) => {
@@ -162,6 +166,7 @@ export class Game {
     // side buttons
     this.ui.hud.addSideButton('app', '📱', 'Manager app (Tab)', () => this.app.open());
     this.ui.hud.addSideButton('build', '🏗️', 'Move furniture (B)', () => this.build.toggleSelect(), 'alt');
+    this.missions.attachButton(this.ui.hud.addSideButton('missions', '🎯', 'Daily missions', () => this.missions.open(), 'gold'));
     this.endDayBtn = this.ui.hud.addSideButton('endday', '🌙', 'End the day', () => this.requestEndDay(false), 'green');
     this.ui.hud.onGear = () => this.onPauseMenu();
     this.ui.hud.onMoney = () => this.ads.rewarded('cash');
@@ -213,6 +218,10 @@ export class Game {
     for (const f of this.furniture.items.values()) if (f.s.broken) this.markers.add('broken' + f.s.uid, f.box.getCenter(new THREE.Vector3()).setY(f.def.size[2] + 0.4), '⚠️');
     if (!state.candidates.length) this.staff.refreshCandidates();
     this.building.setOpenSign(state.open);
+    recomputeMarketing(state);
+    this.refreshMarketingVisuals();
+    this.missions.ensure();
+    this.missions.refreshButton();
   }
 
   start() {
@@ -224,6 +233,7 @@ export class Game {
       this.raf = requestAnimationFrame(loop);
       let dt = (t - this.lastT) / 1000;
       this.lastT = t;
+      this.engine.tickPerf(dt);
       if (dt > 0.1) dt = 0.1;
       if (dt <= 0) return;
       this.frame(dt);
@@ -271,6 +281,7 @@ export class Game {
       if (this.mode === 'walk') this.actions.update(dt);
       if (this.mode === 'build') this.build.update(dt);
       this.tutorial.update(dt);
+      this.missions.update(dt);
       // doors open for everyone nearby
       const agents: { x: number; z: number; staff: boolean }[] = [{ x: this.player.pos.x, z: this.player.pos.z, staff: true }];
       for (const c of this.customers.list) agents.push({ x: c.pos.x, z: c.pos.z, staff: false });
@@ -464,6 +475,7 @@ export class Game {
     this.player.setHeld(null);
     this.boxes.setHeld(b, false);
     if (!this.putOnRack(b, f, spot)) this.boxes.placeAt(b, this.player.pos.x, FLOOR_Y, this.player.pos.z, 0);
+    else this.missions.bump('rack');
     audio.play('thud', b.pos, 0.6);
     this.actions.gainXP(1);
   }
@@ -534,6 +546,15 @@ export class Game {
     this.checkout.sync();
     this.power.applyPower();
     this.shelves.markTags();
+    this.refreshMarketingVisuals();
+  }
+
+  /** The street billboard shows the store's ad while that campaign runs. */
+  refreshMarketingVisuals() {
+    const s = this.state;
+    if (!s) return;
+    const on = activeCampaigns(s).some((c) => c.id === 'billboard');
+    this.city.setBillboard(on ? s.storeName : null, `${s.openHour}:00–${s.closeHour === 24 ? '24' : s.closeHour}:00`);
   }
 
   async tryExpansion(index: number) {
@@ -711,6 +732,9 @@ export class Game {
     const s = this.state;
     this.sim.startNewDay();
     this.checkConstruction(true);
+    recomputeMarketing(s);
+    this.refreshMarketingVisuals();
+    this.missions.ensure();
     this.staff.dayStart();
     this.events.dayStart();
     this.player.pos.set(6.5, 0, 3.4);

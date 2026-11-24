@@ -4,7 +4,7 @@ const browser = await chromium.launch({ args: ['--use-angle=swiftshader', '--ena
 const page = await browser.newPage({ viewport: { width: 1000, height: 500 } });
 const logs = [];
 page.on('pageerror', (e) => logs.push(`[pageerror] ${e.message}\n${e.stack}`));
-await page.goto('http://localhost:5173/', { waitUntil: 'load' });
+await page.goto('http://localhost:5173/?fixedres', { waitUntil: 'load' });
 await page.waitForFunction(() => window.game && document.querySelector('.title-screen'), null, { timeout: 60000 });
 await page.click('text=NEW GAME'); await page.waitForTimeout(300); await page.click('input[type=checkbox]'); await page.click('text=OPEN MY SHOP'); await page.waitForTimeout(1500);
 const g = (fn, arg) => page.evaluate(fn, arg);

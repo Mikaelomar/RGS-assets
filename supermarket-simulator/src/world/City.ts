@@ -5,6 +5,17 @@ import * as T from '../gfx/Textures';
 import { Rng } from '../core/util';
 import type { Daylight } from './Daylight';
 
+/** Rounded rectangle path (CanvasRenderingContext2D.roundRect is missing on older Android WebViews). */
+function roundRectPath(ctx: CanvasRenderingContext2D, x: number, y: number, w: number, h: number, r: number) {
+  r = Math.min(r, w / 2, h / 2);
+  ctx.moveTo(x + r, y);
+  ctx.arcTo(x + w, y, x + w, y + h, r);
+  ctx.arcTo(x + w, y + h, x, y + h, r);
+  ctx.arcTo(x, y + h, x, y, r);
+  ctx.arcTo(x, y, x + w, y, r);
+  ctx.closePath();
+}
+
 export const STREET = {
   sidewalkZ0: 0,
   sidewalkZ1: 5,
@@ -160,6 +171,7 @@ export class City {
     // ---- buildings across the street + neighbors
     this.buildBlocks();
     this.buildStreetFurniture();
+    this.buildBillboard();
     this.buildTraffic();
   }
 
@@ -345,6 +357,100 @@ export class City {
     const poolMesh = this.add(pools.build()!, poolMat, { cast: false, receive: false });
     poolMesh.renderOrder = 2;
     this.daylight.registerNightOnly(poolMesh);
+  }
+
+  // ------------------------------------------------------------------ billboard across the street
+  private billboardMat: THREE.MeshStandardMaterial | null = null;
+  private billboardKey = '';
+  private billboardTex: THREE.Texture | null = null;
+
+  private buildBillboard() {
+    const x = 17, z = 19.3;
+    const b = new GeoBuilder();
+    b.box(0.25, 4.7, 0.25, '#5f6a72', x - 2.2, 2.35, z + 0.2);
+    b.box(0.25, 4.7, 0.25, '#5f6a72', x + 2.2, 2.35, z + 0.2);
+    b.box(6.4, 3.4, 0.22, '#37474f', x, 6.1, z + 0.12);
+    b.box(6.2, 0.1, 0.7, '#5f6a72', x, 4.36, z - 0.15);
+    for (const lx of [-1.8, 0, 1.8]) b.box(0.08, 0.5, 0.08, '#37474f', x + lx, 4.6, z - 0.45);
+    this.add(b.build()!, this.stdMat(null, { vertexColors: true, roughness: 0.7 }), { cast: true, receive: true });
+    const mat = this.stdMat(null, { roughness: 0.55 });
+    const panel = new THREE.Mesh(new THREE.PlaneGeometry(6.0, 3.0), mat);
+    panel.position.set(x, 6.1, z - 0.012);
+    panel.rotation.y = Math.PI; // faces the store (-z)
+    this.group.add(panel);
+    this.billboardMat = mat;
+    this.setBillboard(null);
+  }
+
+  /** Shows the store's own ad while a billboard campaign runs, otherwise a cola ad. */
+  setBillboard(storeName: string | null, hours = '8:00–22:00') {
+    const key = storeName ? `store:${storeName}:${hours}` : 'cola';
+    if (!this.billboardMat || key === this.billboardKey) return;
+    this.billboardKey = key;
+    const [c, ctx] = T.makeCanvas(1024, 512);
+    if (storeName) {
+      const gr = ctx.createLinearGradient(0, 0, 1024, 512);
+      gr.addColorStop(0, '#d23b2c');
+      gr.addColorStop(1, '#ff8f00');
+      ctx.fillStyle = gr;
+      ctx.fillRect(0, 0, 1024, 512);
+      ctx.fillStyle = 'rgba(255,255,255,0.12)';
+      for (let i = 0; i < 9; i++) ctx.fillRect(-200 + i * 160, 0, 60, 512);
+      ctx.textAlign = 'center';
+      ctx.textBaseline = 'middle';
+      ctx.fillStyle = '#ffffff';
+      let fs = 120;
+      ctx.font = `${fs}px 'Lilita One', 'Arial Black', sans-serif`;
+      const name = storeName.toUpperCase();
+      while (ctx.measureText(name).width > 900 && fs > 40) { fs *= 0.92; ctx.font = `${fs}px 'Lilita One', 'Arial Black', sans-serif`; }
+      ctx.shadowColor = 'rgba(0,0,0,0.35)';
+      ctx.shadowOffsetY = 6;
+      ctx.fillText(name, 512, 150);
+      ctx.shadowColor = 'transparent';
+      ctx.font = `800 54px 'Nunito', sans-serif`;
+      ctx.fillText('Fresh deals every day!', 512, 285);
+      ctx.fillStyle = '#ffd23f';
+      ctx.beginPath();
+      roundRectPath(ctx, 262, 352, 500, 92, 46);
+      ctx.fill();
+      ctx.fillStyle = '#7a1e12';
+      ctx.font = `46px 'Lilita One', 'Arial Black', sans-serif`;
+      ctx.fillText(`🛒 OPEN ${hours}`, 512, 400);
+    } else {
+      const gr = ctx.createLinearGradient(0, 0, 0, 512);
+      gr.addColorStop(0, '#0d47a1');
+      gr.addColorStop(1, '#1e88e5');
+      ctx.fillStyle = gr;
+      ctx.fillRect(0, 0, 1024, 512);
+      for (let i = 0; i < 70; i++) {
+        ctx.fillStyle = `rgba(255,255,255,${0.08 + Math.random() * 0.2})`;
+        ctx.beginPath();
+        ctx.arc(Math.random() * 1024, Math.random() * 512, 4 + Math.random() * 16, 0, Math.PI * 2);
+        ctx.fill();
+      }
+      // bottle
+      ctx.fillStyle = '#c62828';
+      ctx.beginPath();
+      roundRectPath(ctx, 110, 120, 150, 330, 40);
+      ctx.fill();
+      ctx.fillRect(160, 60, 50, 80);
+      ctx.fillStyle = '#ffffff';
+      ctx.fillRect(110, 250, 150, 70);
+      ctx.fillStyle = '#c62828';
+      ctx.font = `34px 'Lilita One', sans-serif`;
+      ctx.textAlign = 'center';
+      ctx.textBaseline = 'middle';
+      ctx.fillText('FIZZY', 185, 286);
+      ctx.fillStyle = '#ffffff';
+      ctx.font = `140px 'Lilita One', 'Arial Black', sans-serif`;
+      ctx.fillText('FIZZY COLA', 640, 210);
+      ctx.font = `800 52px 'Nunito', sans-serif`;
+      ctx.fillText('Ice cold. Every day.', 640, 340);
+    }
+    this.billboardTex?.dispose();
+    this.billboardTex = T.toTexture(c, { repeat: false });
+    this.billboardMat.map = this.billboardTex;
+    this.billboardMat.needsUpdate = true;
   }
 
   carGeometry(b: GeoBuilder, x: number, z: number, color: string, ry: number) {

@@ -1,0 +1,23 @@
+// street billboard: default ad, then the store's own ad during a billboard campaign
+import { chromium } from '/opt/node-tools/node_modules/playwright/index.mjs';
+const browser = await chromium.launch({ args: ['--use-angle=swiftshader', '--enable-unsafe-swiftshader', '--ignore-gpu-blocklist'] });
+const page = await browser.newPage({ viewport: { width: 1000, height: 500 } });
+const logs = [];
+page.on('pageerror', (e) => logs.push(`[pageerror] ${e.message}\n${e.stack}`));
+await page.goto('http://localhost:5173/?fixedres', { waitUntil: 'load' });
+await page.waitForFunction(() => window.game && document.querySelector('.title-screen'), null, { timeout: 60000 });
+await page.click('text=NEW GAME'); await page.waitForTimeout(300); await page.click('input[type=checkbox]'); await page.click('text=OPEN MY SHOP'); await page.waitForTimeout(1500);
+const g = (fn, arg) => page.evaluate(fn, arg);
+await g(() => { const G = window.game; G.state.money = 90000; G.sim.addXP(5000); });
+await page.waitForTimeout(500);
+await g(() => window.game.ui.closeAll()); await page.waitForTimeout(200); await g(() => window.game.ui.closeAll());
+await g(() => { const G = window.game; G.player.pos.set(17, 0, 4.2); G.player.yaw = Math.PI; G.player.pitch = 0.32; });
+await page.waitForTimeout(1500);
+await page.screenshot({ path: 'tests/out/bb_1_default.png' });
+await g(() => { const G = window.game; G.state.storeName = 'Mika Market'; window.__launch = true; });
+await g(async () => { const { launchCampaign } = await import('/src/game/Marketing.ts'); launchCampaign(window.game, 'billboard'); });
+await page.waitForTimeout(1500);
+await page.screenshot({ path: 'tests/out/bb_2_store.png' });
+console.log('marketing', await g(() => window.game.state.marketing));
+console.log(logs.join('\n') || 'no errors');
+await browser.close();

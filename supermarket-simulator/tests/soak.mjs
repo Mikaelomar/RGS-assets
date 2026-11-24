@@ -6,7 +6,7 @@ const page = await browser.newPage({ viewport: { width: 900, height: 450 } });
 const errors = [];
 page.on('pageerror', (e) => errors.push(`[pageerror] ${e.message}\n${(e.stack || '').split('\n').slice(0, 4).join('\n')}`));
 page.on('console', (m) => { if (m.type() === 'error') errors.push(`[console.error] ${m.text()}`); });
-await page.goto('http://localhost:5173/', { waitUntil: 'load' });
+await page.goto('http://localhost:5173/?fixedres', { waitUntil: 'load' });
 await page.waitForFunction(() => window.game && document.querySelector('.title-screen'), null, { timeout: 60000 });
 await page.click('text=NEW GAME'); await page.waitForTimeout(300); await page.click('input[type=checkbox]'); await page.click('text=OPEN MY SHOP'); await page.waitForTimeout(1500);
 const g = (fn, arg) => page.evaluate(fn, arg);

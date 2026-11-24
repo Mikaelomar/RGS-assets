@@ -115,7 +115,7 @@ export class Menus {
       h('div', { class: 'row', style: { marginTop: '6px' } },
         h('button', { class: 'btn small dark', onclick: () => this.g.ads.showPrivacyOptions() }, '🔒 Ad privacy options'),
         this.g.state?.tutorialDone === false ? h('button', { class: 'btn small orange', onclick: () => { this.g.tutorial.skip(); this.g.ui.toast('Tutorial skipped', 'info'); } }, 'Skip tutorial') : null),
-      h('div', { class: 'note', style: { marginTop: '8px' } }, 'Graphics changes to anti-aliasing apply after restarting the app.'));
+      h('div', { class: 'note', style: { marginTop: '8px' } }, 'Auto adjusts resolution and shadows to keep the game smooth on your phone. Anti-aliasing changes apply after restarting the app.'));
     this.g.ui.modal('SETTINGS', body, { size: 'medium' });
   }
 

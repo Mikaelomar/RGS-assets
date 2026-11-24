@@ -386,6 +386,8 @@ export class CheckoutSystem {
       g.actions.gainXP(cu.basket.length * 1 + 3 + (o.exact ? 2 : 0), center);
       this.servedHere++;
       if (this.active === c) this.printReceipt(c, cu, revenue);
+      g.missions.bump('serve');
+      if (o.exact && cu.pay === 'cash') g.missions.bump('exact');
     }
     else g.actions.gainXP(cu.basket.length * 0.6 + 1);
     cu.spent = revenue;

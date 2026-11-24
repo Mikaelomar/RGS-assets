@@ -51,6 +51,19 @@ export class Engine {
   /** Set while something is drawn in the overlay scene (held box, tool). */
   overlayActive = false;
   private resizeHandlers: (() => void)[] = [];
+  /** Automatic performance tuning (graphics quality "Auto"). */
+  adaptive = false;
+  /** Multiplier on the profile pixel ratio chosen by the adaptive controller. */
+  renderScale = 1;
+  /** Quality the adaptive controller fell back to (null = not dropped). */
+  autoDropped: Quality | null = null;
+  onQualityDrop: ((q: Quality) => void) | null = null;
+  private perfT = 0;
+  private perfFrames = 0;
+  private perfWorst = 0;
+  private perfWarmup = 6;
+  private slowStreak = 0;
+  private fastStreak = 0;
 
   constructor(canvas: HTMLCanvasElement, quality: Quality) {
     this.canvas = canvas;
@@ -101,8 +114,59 @@ export class Engine {
     this.resize();
   }
 
+  /** Measures real frame times and trades resolution (then shadows) for a smooth frame rate. */
+  tickPerf(dt: number) {
+    if (!this.adaptive || document.hidden) return;
+    if (this.perfWarmup > 0) {
+      this.perfWarmup -= dt;
+      return;
+    }
+    this.perfT += dt;
+    this.perfFrames++;
+    this.perfWorst = Math.max(this.perfWorst, dt);
+    if (this.perfT < 2) return;
+    const fps = this.perfFrames / this.perfT;
+    const hitch = this.perfWorst > 0.35 && fps > 12; // one-off spike (loading / shader compile) on an otherwise fast device
+    this.perfT = 0;
+    this.perfFrames = 0;
+    this.perfWorst = 0;
+    if (hitch) return;
+    if (fps < 40) {
+      this.fastStreak = 0;
+      if (this.renderScale > this.minScale() + 0.02) this.setRenderScale(this.renderScale * 0.86);
+      else if (++this.slowStreak >= 3 && this.quality !== 'low') {
+        this.slowStreak = 0;
+        const q: Quality = this.quality === 'high' ? 'medium' : 'low';
+        this.autoDropped = q;
+        this.setQuality(q);
+        this.setRenderScale(0.86);
+        this.onQualityDrop?.(q);
+      }
+    } else if (fps > 56) {
+      this.slowStreak = 0;
+      if (this.renderScale < 1 && ++this.fastStreak >= 2) {
+        this.fastStreak = 0;
+        this.setRenderScale(this.renderScale * 1.1);
+      }
+    } else {
+      this.slowStreak = 0;
+      this.fastStreak = 0;
+    }
+  }
+
+  /** Never go below ~0.6 device pixels per CSS pixel: too blurry to read labels. */
+  private minScale() {
+    return Math.min(1, Math.max(0.55, 0.6 / this.profile.pixelRatio));
+  }
+
+  setRenderScale(s: number) {
+    this.renderScale = Math.max(this.minScale(), Math.min(1, s));
+    this.renderer.setPixelRatio(this.profile.pixelRatio * this.renderScale);
+    this.renderer.setSize(this.width, this.height, false);
+  }
+
   private applyQuality() {
-    this.renderer.setPixelRatio(this.profile.pixelRatio);
+    this.renderer.setPixelRatio(this.profile.pixelRatio * this.renderScale);
     this.renderer.shadowMap.enabled = this.profile.shadows;
     this.renderer.shadowMap.needsUpdate = true;
   }

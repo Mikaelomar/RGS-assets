@@ -331,3 +331,20 @@
 .co-return .rt-btns { display: flex; gap: 8px; }
 .co-return .rt-btns .btn { flex: 1; padding: 10px 6px; font-size: 15px; }
 @media (max-height: 460px) { .co-return { bottom: calc(8px + var(--safe-b)); padding: 9px; width: 230px; } .co-return .rt-reason { margin-top: 5px; } .co-return .rt-hint { margin-bottom: 6px; } }
+
+/* daily missions */
+.sidebtn.gold { background: rgba(255, 196, 0, 0.96); }
+.missions .ms-head { display: flex; flex-wrap: wrap; justify-content: space-between; gap: 6px; font-weight: 800; font-size: 13px; color: #5b6b78; margin-bottom: 8px; }
+.missions .ms-streak { color: #e65100; }
+.missions .ms-card { display: flex; align-items: center; gap: 10px; background: #fff; border-radius: 14px; padding: 10px 12px; margin-bottom: 8px; box-shadow: 0 2px 0 rgba(0,0,0,.08); }
+.missions .ms-card.done { background: #effbea; }
+.missions .ms-icon { font-size: 30px; width: 40px; text-align: center; flex: none; }
+.missions .ms-main { flex: 1; min-width: 0; }
+.missions .ms-title { font-family: var(--font-display); font-size: 16px; color: var(--c-card-ink, #1d2b36); line-height: 1.15; }
+.missions .ms-bar { height: 10px; background: #e3e9ee; border-radius: 5px; overflow: hidden; margin: 6px 0 4px; }
+.missions .ms-bar > div { height: 100%; background: linear-gradient(90deg, #36b24a, #7bd84e); border-radius: 5px; }
+.missions .ms-meta { font-size: 12px; font-weight: 700; color: #607080; }
+.missions .ms-btns { display: flex; flex-direction: column; gap: 6px; flex: none; }
+.missions .ms-left { font-family: var(--font-display); font-size: 18px; color: #90a4ae; flex: none; width: 54px; text-align: right; }
+.missions .ms-claimed { font-weight: 900; color: #2e7d32; flex: none; }
+.card.campaign.running { box-shadow: 0 0 0 3px #36b24a inset; }

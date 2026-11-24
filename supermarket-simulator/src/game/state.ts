@@ -2,6 +2,8 @@
 import type { RoomId } from './layout';
 import type { CategoryId } from '../data/products';
 
+import type { MissionState } from './Missions';
+
 export const SAVE_VERSION = 1;
 
 export interface Batch { n: number; exp: number; }
@@ -156,6 +158,9 @@ export interface GameState {
   seenTips: string[];
   stats: Record<string, number>;
   construction?: { index: number; doneDay: number; doneMin: number } | null;
+  missions?: MissionState | null;
+  /** Running marketing campaigns (active through untilDay). */
+  campaigns?: { id: string; untilDay: number }[];
 }
 
 export function newDayStats(day: number): DayStats {

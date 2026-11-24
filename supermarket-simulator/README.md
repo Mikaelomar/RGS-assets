@@ -24,6 +24,9 @@ Ensimmäisen persoonan kauppasimulaattori Androidille ja iPhonelle. Aloitat pien
 - **Kasvu**: 12 laajennusta (Corner Shop → Small → Medium → Large Supermarket → Hypermarket → Mega Hypermarket) – rakentaminen maksaa ja kestää muutaman pelitunnin, luvat tuoteryhmille, 20 päivitystä (LED-valot, aurinkopaneelit, generaattori, lastauslaituri…).
 - **Julisteet ja mainosbannerit**: 12 erilaista (tasoilla 3–500 avautuvia), parantavat asiakkaiden viihtyvyyttä.
 - **Tasot 1–500** palkintoineen ja titteleineen.
+- **Päivittäiset tehtävät** 🎯: kolme uutta tehtävää joka aamu (myy tuotteita, palvele kassalla, anna tasaraha, täytä hyllyt, kierrätä laatikot, siivoa…). Palkintona rahaa ja XP:tä, vapaaehtoisella mainoksella palkinnon voi tuplata. Putkibonus +10 %/päivä (max +50 %).
+- **Markkinointi** 📣: mainoslehtiset, lehti-ilmoitus, radio, some, mainostaulu, ruokavaikuttaja ja TV-mainos tuovat lisää asiakkaita muutamaksi päiväksi. Mainostaulukampanjan aikana kadun mainostaulussa näkyy oman kauppasi mainos.
+- **Automaattinen grafiikka**: Auto-tilassa peli laskee resoluutiota ja varjoja itse, jos puhelin ei jaksa, jotta peli pysyy sulavana.
 - **Päivä ja yö**: avaa kauppa kyltistä kun olet valmis, sulje illalla, tee yötyöt ja päätä päivä 🌙.
 - **Tallennus**: automaattitallennus + 3 tallennuspaikkaa.
 - **Mainokset (AdMob)**: välimainokset vain luonnollisissa tauoissa (esim. päivän lopussa, ostosten jälkeen, tason noustessa), oletuksena **enintään 10 tunnissa**. Lisäksi vapaaehtoiset palkintomainokset (+raha, +energia, pikatoimitus, päivän bonus).
