@@ -3,6 +3,7 @@ import type { RoomId } from './layout';
 import type { CategoryId } from '../data/products';
 
 import type { MissionState } from './Missions';
+import type { ForkliftState } from './Forklift';
 
 export const SAVE_VERSION = 1;
 
@@ -146,7 +147,11 @@ export interface GameState {
   tutorialDone: boolean;
   events: ActiveEvent[];
   power: { outageMin: number; tripped: boolean };
-  weather: 'sunny' | 'cloudy' | 'rain';
+  weather: 'sunny' | 'cloudy' | 'rain' | 'snow';
+  /** Parked forklift (upgrade "forklift"). */
+  forklift?: ForkliftState | null;
+  /** Seasonal events already greeted (e.g. "christmas-2026"). */
+  seasonsSeen?: string[];
   player: { x: number; y: number; z: number; yaw: number; pitch: number; carry: number | null; tool: 'none' | 'mop' };
   playtime: number;
   totals: { revenue: number; customers: number; itemsSold: number; days: number };

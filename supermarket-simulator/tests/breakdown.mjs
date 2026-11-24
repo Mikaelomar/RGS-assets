@@ -1,7 +1,7 @@
 import { chromium } from '/opt/node-tools/node_modules/playwright/index.mjs';
 const browser = await chromium.launch({ args: ['--use-angle=swiftshader', '--enable-unsafe-swiftshader', '--ignore-gpu-blocklist'] });
 const page = await browser.newPage({ viewport: { width: 844, height: 390 } });
-await page.goto('http://localhost:5173/?fixedres', { waitUntil: 'load' });
+await page.goto('http://localhost:5173/?fixedres&season=none', { waitUntil: 'load' });
 await page.waitForFunction(() => window.game && document.querySelector('.title-screen'), null, { timeout: 60000 });
 await page.waitForTimeout(4000);
 const res = await page.evaluate(() => {

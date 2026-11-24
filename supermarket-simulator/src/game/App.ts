@@ -13,6 +13,7 @@ import type { GameState } from './state';
 import { FURN_MAP } from '../data/furniture';
 import { PRODUCTS, CATEGORIES } from '../data/products';
 import { EXPANSIONS } from './layout';
+import { currentSeason, isChristmas, setSeasonalEnabled } from './Season';
 
 const progress = (f: number, tip?: string) => {
   const el = document.getElementById('boot-fill');
@@ -58,6 +59,10 @@ function createDemoState(): GameState {
   add('freezer_chest', 21, -13, 0);
   add('freezer_chest', 21, -16, 0);
   add('bread_rack', 14, -4.4, 0);
+  if (isChristmas()) {
+    s.weather = 'snow';
+    add('xmas_tree', 19.6, -4.6, 0);
+  }
   add('shelf_wall', 31.7, -14, -Math.PI / 2);
   add('shelf_wall', 31.7, -18, -Math.PI / 2);
   add('promo_stand', 18, -2.5, 0);
@@ -130,6 +135,12 @@ export async function startApp(canvas: HTMLCanvasElement) {
     game.input.invertY = st.invertY;
     audio.setVolumes(st.sfx, st.music);
     setVibration(st.vibration);
+    const seasonalBefore = currentSeason()?.key ?? '';
+    setSeasonalEnabled(st.seasonal !== false);
+    if ((currentSeason()?.key ?? '') !== seasonalBefore && game.state) {
+      game.rebuildStore();
+      game.checkSeason();
+    }
     game.showFps = st.showFps;
     game.engine.camera.fov = st.fov;
     game.engine.camera.updateProjectionMatrix();

@@ -381,6 +381,40 @@ export function plantDecor(): FurnGeo {
   return f.build();
 }
 
+export function christmasTree(): FurnGeo {
+  const f = new FB();
+  // stand + trunk
+  f.s.cyl(0.32, 0.38, 0.28, '#8d1c1c', 0, 0.14, 0, { seg: 12 });
+  f.s.cyl(0.07, 0.08, 0.5, '#5d4037', 0, 0.45, 0, { seg: 8 });
+  // layered branches
+  const layers: [number, number, number][] = [[0.68, 0.9, 0.55], [0.56, 0.8, 1.05], [0.43, 0.7, 1.5], [0.3, 0.6, 1.92]];
+  layers.forEach(([r, h, y], i) => f.s.cone(r, h, i % 2 ? '#1f6b34' : '#23793a', 0, y + h / 2, 0, { seg: 12 }));
+  // ornaments + lights
+  const cols = ['#d32f2f', '#ffd54f', '#1e88e5', '#e0e0e0', '#ab47bc'];
+  let k = 0;
+  layers.forEach(([r, h, y], li) => {
+    const n = 7 - li;
+    for (let i = 0; i < n; i++) {
+      const a = (i / n) * Math.PI * 2 + li * 0.7;
+      const rr = r * 0.78;
+      f.s.sphere(0.05, cols[k++ % cols.length], Math.cos(a) * rr, y + h * 0.18, Math.sin(a) * rr, { ws: 8, hs: 6 });
+      const b = a + Math.PI / n;
+      f.e.sphere(0.022, ['#fff59d', '#ff8a80', '#80d8ff', '#ccff90'][(i + li) % 4], Math.cos(b) * r * 0.62, y + h * 0.42, Math.sin(b) * r * 0.62, { ws: 6, hs: 4 });
+    }
+  });
+  // star
+  f.e.sphere(0.09, '#ffd600', 0, 2.56, 0, { ws: 8, hs: 6 });
+  f.e.cone(0.05, 0.16, '#ffd600', 0, 2.68, 0, { seg: 5 });
+  // presents
+  const gifts: [number, number, number, string, string][] = [[0.42, 0.3, 0.2, '#c62828', '#ffd54f'], [-0.4, 0.35, 0.26, '#1565c0', '#ffffff'], [0.05, -0.48, 0.22, '#2e7d32', '#ff5252']];
+  for (const [x, z, s, c1, c2] of gifts) {
+    f.s.box(s, s * 0.8, s, c1, x, s * 0.4, z);
+    f.s.box(s + 0.004, s * 0.8 + 0.004, 0.035, c2, x, s * 0.4, z);
+    f.s.box(0.035, s * 0.8 + 0.004, s + 0.004, c2, x, s * 0.4, z);
+  }
+  return f.build();
+}
+
 export function promoStand(): FurnGeo {
   const f = new FB();
   f.s.boxB(1.2, 0.3, 0.8, '#c62828', 0, 0, 0);

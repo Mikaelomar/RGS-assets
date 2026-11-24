@@ -18,6 +18,8 @@ export interface Settings {
   music: number;
   vibration: boolean;
   showFps: boolean;
+  /** Seasonal events (Christmas decorations, snow, specials). */
+  seasonal?: boolean;
   headBob: boolean;
   fov: number;
 }

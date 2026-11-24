@@ -4,6 +4,7 @@ import type { Game } from './Game';
 import { chance, pick, rand, nextUid, round2 } from '../core/util';
 import { PRODUCT_MAP } from '../data/products';
 import { audio } from '../core/Audio';
+import { isChristmas } from './Season';
 
 export class EventSystem {
   constructor(private g: Game) {
@@ -20,7 +21,7 @@ export class EventSystem {
     if (this.has('inspection')) m *= 0.9;
     return m;
   }
-  spillMul() { return this.g.state.weather === 'rain' ? 1.6 : 1; }
+  spillMul() { return this.g.state.weather === 'rain' || this.g.state.weather === 'snow' ? 1.6 : 1; }
 
   private add(kind: string, data: Record<string, any> = {}) {
     const s = this.g.state;
@@ -41,8 +42,10 @@ export class EventSystem {
     s.events = s.events.filter((e) => !e.resolved && (e.kind === 'leak' || e.kind === 'recall'));
     // weather
     const r = Math.random();
-    s.weather = r < 0.55 ? 'sunny' : r < 0.8 ? 'cloudy' : 'rain';
+    if (isChristmas()) s.weather = r < 0.3 ? 'sunny' : r < 0.55 ? 'cloudy' : 'snow';
+    else s.weather = r < 0.55 ? 'sunny' : r < 0.8 ? 'cloudy' : 'rain';
     g.daylight.rain = s.weather === 'rain' ? 1 : 0;
+    g.daylight.snow = s.weather === 'snow' ? 1 : 0;
     if (s.day < 3) return;
     if (chance(0.12)) {
       this.add('rush');

@@ -11,6 +11,7 @@ import { DELIVERY_SPOT } from './layout';
 import { audio } from '../core/Audio';
 import { nextUid, round2, rand, clamp } from '../core/util';
 import * as T from '../gfx/Textures';
+import { inSeason } from './Season';
 
 const REAL_SEC_STANDARD = 32;
 const REAL_SEC_EXPRESS = 9;
@@ -161,7 +162,7 @@ export class OrderSystem {
     const root = this.buildTruck();
     const queue: { pid?: string; fid?: string; pallet?: boolean }[] = [];
     const boxesCount = o.lines.filter((l) => l.pid).reduce((a, l) => a + l.qty, 0);
-    if (g.state.upgrades.includes('palletjack') && boxesCount >= 3) queue.push({ pallet: true });
+    if ((g.state.upgrades.includes('palletjack') || g.state.upgrades.includes('forklift')) && boxesCount >= 3) queue.push({ pallet: true });
     for (const l of o.lines) for (let i = 0; i < l.qty; i++) queue.push(l.pid ? { pid: l.pid } : { fid: l.fid });
     const tr: Truck = { root, order: o, x: 130, phase: 'in', t: 0, queue, speed: 11, wheels: [] };
     root.position.set(tr.x, STREET.roadY, STREET.laneNear);
@@ -257,7 +258,7 @@ export class OrderSystem {
     const g = this.g;
     if (g.state.level < 3 || !g.state.tutorialDone || Math.random() > 0.035) return pid;
     const ordered = PRODUCT_MAP.get(pid)!;
-    const options = PRODUCTS.filter((p) => p.id !== pid && p.category === ordered.category && p.level <= g.state.level + 5);
+    const options = PRODUCTS.filter((p) => p.id !== pid && p.category === ordered.category && p.level <= g.state.level + 5 && inSeason(p.season));
     if (!options.length) return pid;
     const got = options[Math.floor(Math.random() * options.length)];
     const refund = round2(ordered.cost * ordered.perBox);

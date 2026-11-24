@@ -232,7 +232,7 @@ export class CleaningSystem {
       this.accT = 0;
       const rate = g.sim.clockRate();
       if (rate > 0) {
-        const rain = g.state.weather === 'rain' ? 2.2 : 1;
+        const rain = g.state.weather === 'rain' || g.state.weather === 'snow' ? 2.2 : 1;
         for (const c of g.customers.list) {
           if (c.agent.speed > 0.2 && c.shopper) this.addDirt(c.pos.x, c.pos.z, 0.0016 * k * rate * rain * (c.pos.z > -3 ? 1.8 : 1));
         }

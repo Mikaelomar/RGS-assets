@@ -34,6 +34,8 @@ export interface ProductDef {
   level: number;
   shelfLife: number;
   popularity: number;
+  /** Seasonal item: only sold while that season runs (see game/Season.ts). */
+  season?: string;
 }
 
 export type CategoryId =
@@ -239,6 +241,16 @@ const RAW: P[] = [
 
   // ---------------- Clothing ----------------
   { id: 'socks', name: 'Comfy Socks (3)', category: 'clothing', display: ['shelf'], shape: 'box', dims: [0.12, 0.2, 0.03], color: '#5c6bc0', color2: '#ffffff', label: '#3949ab', icon: 'shirt', cost: 2.0, price: 5.99, perBox: 12, level: 118, shelfLife: 0, popularity: 0.5 },
+  // ---------------- Christmas season (20 Nov – 6 Jan) ----------------
+  { id: 'gingerbread', name: 'Gingerbread Hearts', category: 'snacks', display: ['shelf'], shape: 'box', dims: [0.2, 0.06, 0.12], color: '#8d4a24', color2: '#ffe0b2', label: '#c62828', icon: 'heart', cost: 1.1, price: 2.99, perBox: 16, level: 1, shelfLife: 0, popularity: 1.6, season: 'christmas' },
+  { id: 'xmas_choc', name: 'Holiday Chocolate Box', category: 'snacks', display: ['shelf'], shape: 'box', dims: [0.24, 0.05, 0.16], color: '#b71c1c', color2: '#ffd54f', label: '#1b5e20', icon: 'choco', cost: 2.4, price: 5.99, perBox: 10, level: 1, shelfLife: 0, popularity: 1.4, season: 'christmas' },
+  { id: 'candy_canes', name: 'Candy Canes (12)', category: 'snacks', display: ['shelf'], shape: 'bag', dims: [0.14, 0.2, 0.05], color: '#e53935', color2: '#ffffff', label: '#ffffff', icon: 'candy', cost: 0.8, price: 1.99, perBox: 20, level: 1, shelfLife: 0, popularity: 1.3, season: 'christmas' },
+  { id: 'xmas_porridge', name: 'Christmas Porridge Rice', category: 'pantry', display: ['shelf'], shape: 'bag', dims: [0.12, 0.2, 0.07], color: '#fafafa', color2: '#c62828', label: '#c62828', icon: 'rice', cost: 0.7, price: 1.79, perBox: 16, level: 1, shelfLife: 0, popularity: 1.2, season: 'christmas' },
+  { id: 'mulled_drink', name: 'Winter Spice Berry Drink', category: 'drinks', display: ['shelf', 'fridge'], shape: 'bottle', dims: [0.08, 0.28, 0.08], color: '#6a1b9a', color2: '#ffcc80', label: '#ffcc80', icon: 'berry', cost: 1.2, price: 3.49, perBox: 12, level: 2, shelfLife: 0, popularity: 1.4, season: 'christmas' },
+  { id: 'stollen', name: 'Christmas Stollen', category: 'bakery', display: ['bakery', 'shelf'], shape: 'loaf', dims: [0.11, 0.08, 0.26], color: '#f3e0b5', color2: '#ffffff', label: '#c62828', icon: 'bread', cost: 1.6, price: 4.49, perBox: 8, level: 3, shelfLife: 6, popularity: 1.2, season: 'christmas' },
+  { id: 'xmas_lights', name: 'LED Fairy Lights', category: 'household', display: ['shelf'], shape: 'box', dims: [0.16, 0.12, 0.1], color: '#1b5e20', color2: '#ffd54f', label: '#ffd54f', icon: 'star', cost: 3.5, price: 8.99, perBox: 10, level: 9, shelfLife: 0, popularity: 1.0, season: 'christmas' },
+  { id: 'xmas_ham', name: 'Holiday Roast Ham', category: 'meat', display: ['meat', 'fridge'], shape: 'tray', dims: [0.24, 0.1, 0.18], color: '#d98880', color2: '#ffffff', icon: 'meat', cost: 6.0, price: 12.99, perBox: 6, level: 21, shelfLife: 10, popularity: 1.5, season: 'christmas' },
+
   { id: 'tshirt', name: 'Basic Cotton Tee', category: 'clothing', display: ['shelf'], shape: 'folded', dims: [0.24, 0.04, 0.3], color: '#26a69a', icon: 'shirt', cost: 4.0, price: 9.99, perBox: 8, level: 124, shelfLife: 0, popularity: 0.4 },
 ];
 

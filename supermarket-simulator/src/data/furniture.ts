@@ -42,6 +42,8 @@ export interface FurnDef {
   frontClear?: number;
   /** roll-up banner poster design id */
   poster?: string;
+  /** Seasonal decoration: only sold while that season runs. */
+  season?: string;
 }
 
 function shelfSlots(levels: number[], heights: number[], perLevel: number, w: number, d: number, kind: DisplayKind, zc: number, ry = 0, tilt = 0): SlotDef[] {
@@ -255,6 +257,12 @@ export const FURNITURE: FurnDef[] = [
   { id: 'counter', name: 'Kitchen Counter', desc: '', cat: 'fixed', icon: '🚰', price: 0, level: 1, size: [2.4, 0.6, 0.9], placement: 'fixed', build: () => M.counterCabinet(2.4) },
   { id: 'clock', name: 'Clock', desc: '', cat: 'fixed', icon: '🕒', price: 0, level: 1, size: [0.4, 0.05, 2.4], placement: 'fixed', build: M.wallClock },
 ];
+
+FURNITURE.push({
+  id: 'xmas_tree', name: 'Christmas Tree', desc: 'A big decorated tree with lights and presents. Customers love it!', cat: 'decor', icon: '🎄',
+  price: 150, level: 1, size: [1.4, 1.4, 2.6], placement: 'any', beauty: 3, season: 'christmas',
+  build: M.christmasTree,
+});
 
 for (const p of POSTERS) {
   FURNITURE.push({

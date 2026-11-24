@@ -70,6 +70,8 @@ export class Daylight {
   private nightOnly: THREE.Object3D[] = [];
   powerOn = true;
   rain = 0;
+  /** Snowfall amount (0..1): bright overcast sky. */
+  snow = 0;
   private time = 0;
 
   constructor(scene: THREE.Scene) {
@@ -157,6 +159,9 @@ export class Daylight {
     const rainDark = this.rain * 0.45;
     top.lerp(new THREE.Color('#6b7680'), rainDark);
     hor.lerp(new THREE.Color('#8a949c'), rainDark);
+    const snowSky = this.snow * 0.5 * day;
+    top.lerp(new THREE.Color('#a9b4be'), snowSky);
+    hor.lerp(new THREE.Color('#dfe6ec'), snowSky);
     const sunCol = new THREE.Color('#fff3d6').lerp(new THREE.Color('#ff9a4a'), dusk);
     const u = this.skyMat.uniforms;
     (u.uTop.value as THREE.Color).copy(top);
@@ -164,19 +169,19 @@ export class Daylight {
     (u.uSunDir.value as THREE.Vector3).copy(this.sunDir);
     (u.uSunColor.value as THREE.Color).copy(sunCol).multiplyScalar(day > 0.02 ? 1 : 0);
     u.uStars.value = 1 - smoothstep(-0.15, 0.05, elev);
-    u.uCloud.value = 0.55 + this.rain * 0.45;
+    u.uCloud.value = Math.min(1, 0.55 + this.rain * 0.45 + this.snow * 0.4);
     u.uTime.value = this.time;
     this.sky.position.copy(focus);
 
     this.fog.color.copy(hor).multiplyScalar(0.92);
-    this.fog.near = lerp(30, 70, day) * (1 - this.rain * 0.4);
-    this.fog.far = lerp(170, 330, day) * (1 - this.rain * 0.35);
+    this.fog.near = lerp(30, 70, day) * (1 - this.rain * 0.4) * (1 - this.snow * 0.35);
+    this.fog.far = lerp(170, 330, day) * (1 - this.rain * 0.35) * (1 - this.snow * 0.3);
 
     this.hemi.color.copy(new THREE.Color('#2b3b66').lerp(new THREE.Color('#d6ebff'), day));
     this.hemi.groundColor.copy(new THREE.Color('#2a2622').lerp(new THREE.Color('#8f8272'), day));
     this.hemi.intensity = lerp(0.45, 0.8, day) * (1 - this.rain * 0.25);
     this.sun.color.copy(sunCol);
-    this.sun.intensity = Math.max(0, day * 0.95 * (1 - this.rain * 0.6));
+    this.sun.intensity = Math.max(0, day * 0.95 * (1 - this.rain * 0.6) * (1 - this.snow * 0.45));
     this.sun.position.copy(focus).addScaledVector(this.sunDir, 50);
     this.sun.target.position.copy(focus);
 

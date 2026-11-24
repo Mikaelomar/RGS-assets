@@ -7,7 +7,7 @@ const page = await ctx.newPage();
 const logs = [];
 page.on('console', (m) => { if (!m.text().includes('GPU stall') && !m.text().includes('vite')) logs.push(`[${m.type()}] ${m.text()}`); });
 page.on('pageerror', (e) => logs.push(`[pageerror] ${e.message}\n${e.stack}`));
-await page.goto('http://localhost:5173/?fixedres', { waitUntil: 'load' });
+await page.goto('http://localhost:5173/?fixedres&season=none', { waitUntil: 'load' });
 await page.waitForFunction(() => window.game && document.querySelector('.title-screen'), null, { timeout: 60000 });
 await page.screenshot({ path: 'tests/out/m_title.png' });
 await page.tap('text=NEW GAME'); await page.waitForTimeout(300);

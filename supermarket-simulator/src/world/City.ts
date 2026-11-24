@@ -299,7 +299,7 @@ export class City {
       glow.box(1.2, 0.03, 0.3, '#fff3c4', lx, 6.93, lz);
     }
     // trees on the far sidewalk and around the parking
-    const treeSpots: [number, number][] = [];
+    const treeSpots: [number, number][] = this.treeSpots;
     for (let x = -64; x <= 140; x += 12) treeSpots.push([x + 3, 18.2]);
     for (let z = -30; z <= -4; z += 8) treeSpots.push([105, z]);
     treeSpots.push([-20, -44], [10, -46], [40, -46], [70, -45], [95, -44]);
@@ -360,6 +360,75 @@ export class City {
   }
 
   // ------------------------------------------------------------------ billboard across the street
+  private treeSpots: [number, number][] = [];
+  private winter: THREE.Group | null = null;
+
+  /** Winter look: snow on sidewalks, curbs, the parking lot and on the trees. */
+  setWinter(on: boolean) {
+    if (!on) {
+      if (this.winter) this.winter.visible = false;
+      return;
+    }
+    if (!this.winter) this.winter = this.buildWinter();
+    this.winter.visible = true;
+  }
+
+  private buildWinter(): THREE.Group {
+    const S = STREET;
+    const grp = new THREE.Group();
+    const [c, ctx] = T.makeCanvas(256, 256);
+    ctx.fillStyle = '#ffffff';
+    ctx.fillRect(0, 0, 256, 256);
+    const img = ctx.getImageData(0, 0, 256, 256);
+    for (let i = 0; i < 256 * 256; i++) {
+      const x = i % 256, y = Math.floor(i / 256);
+      const n = 0.5 + 0.25 * Math.sin(x * 0.11 + Math.sin(y * 0.07) * 2) + 0.25 * Math.sin(y * 0.09 + Math.cos(x * 0.05) * 3);
+      const v = 236 + Math.floor(n * 19);
+      img.data[i * 4] = v - 6;
+      img.data[i * 4 + 1] = v - 2;
+      img.data[i * 4 + 2] = 255;
+      img.data[i * 4 + 3] = Math.floor(205 + n * 50);
+    }
+    ctx.putImageData(img, 0, 0);
+    const tex = T.toTexture(c, { repeat: true });
+    const mk = (opacity: number) => {
+      const m = new THREE.MeshStandardMaterial({ map: tex, color: 0xffffff, roughness: 0.88, transparent: true, opacity, depthWrite: false, polygonOffset: true, polygonOffsetFactor: -1, polygonOffsetUnits: -4 });
+      this.daylight.registerOutdoor(m);
+      return m;
+    };
+    const thick = mk(0.97), trampled = mk(0.5), slush = mk(0.75);
+    const plane = (x0: number, z0: number, x1: number, z1: number, y: number, mat: THREE.Material) => {
+      const w = x1 - x0, d = z1 - z0;
+      const geo = new THREE.PlaneGeometry(w, d);
+      const uv = geo.attributes.uv as THREE.BufferAttribute;
+      for (let i = 0; i < uv.count; i++) uv.setXY(i, uv.getX(i) * w / 5, uv.getY(i) * d / 5);
+      const m = new THREE.Mesh(geo, mat);
+      m.rotation.x = -Math.PI / 2;
+      m.position.set((x0 + x1) / 2, y, (z0 + z1) / 2);
+      m.receiveShadow = true;
+      m.renderOrder = 1;
+      grp.add(m);
+    };
+    plane(-70, S.roadZ1 + 0.05, 140, S.farWalkZ1, 0.025, thick); // far sidewalk
+    plane(-70, 0.15, 140, S.sidewalkZ1, 0.025, trampled); // store sidewalk (people walk here)
+    plane(-70, S.roadZ0, 140, S.roadZ0 + 0.7, S.roadY + 0.02, slush); // curb slush
+    plane(-70, S.roadZ1 - 0.7, 140, S.roadZ1, S.roadY + 0.02, slush);
+    plane(66, -32, 106, -2, 0.02, trampled); // parking lot
+    // snow caps on the trees
+    const b = new GeoBuilder();
+    for (const [tx, tz] of this.treeSpots) {
+      b.sphere(1.32, '#f4f8fc', tx, 4.72, tz, { sy: 0.42, ws: 9, hs: 6 });
+      b.sphere(0.8, '#f4f8fc', tx + 0.7, 3.78, tz + 0.3, { sy: 0.4, ws: 8, hs: 5 });
+    }
+    const capMat = new THREE.MeshStandardMaterial({ vertexColors: true, roughness: 0.85 });
+    this.daylight.registerOutdoor(capMat);
+    const caps = new THREE.Mesh(b.build()!, capMat);
+    caps.castShadow = true;
+    grp.add(caps);
+    this.group.add(grp);
+    return grp;
+  }
+
   private billboardMat: THREE.MeshStandardMaterial | null = null;
   private billboardKey = '';
   private billboardTex: THREE.Texture | null = null;

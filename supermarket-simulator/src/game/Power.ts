@@ -52,6 +52,7 @@ export class PowerSystem {
     if (this.g.events.has('heatwave')) t += 10;
     if (this.g.events.has('coldsnap')) t -= 14;
     if (this.g.state.weather === 'rain') t -= 3;
+    if (this.g.state.weather === 'snow') t -= 9;
     return t;
   }
 

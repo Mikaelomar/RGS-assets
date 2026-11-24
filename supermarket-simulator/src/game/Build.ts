@@ -252,6 +252,10 @@ export class BuildMode {
   toggleSelect() {
     const g = this.g;
     if (this.active) return;
+    if (g.forklift.driving) {
+      g.ui.toast('Get out of the forklift first', 'info', '🚜');
+      return;
+    }
     if (g.carry) {
       g.ui.toast('Put down what you are carrying first', 'bad');
       return;

@@ -4,7 +4,7 @@ const browser = await chromium.launch({ args: ['--use-angle=swiftshader', '--ena
 const ctx = await browser.newContext({ viewport: { width: 844, height: 390 }, hasTouch: true, isMobile: true });
 const page = await ctx.newPage();
 page.on('pageerror', (e) => console.log(`[pageerror] ${e.message}`));
-await page.goto('http://localhost:5173/?fixedres', { waitUntil: 'load' });
+await page.goto('http://localhost:5173/?fixedres&season=none', { waitUntil: 'load' });
 await page.waitForFunction(() => window.game && document.querySelector('.title-screen'), null, { timeout: 60000 });
 await page.tap('text=NEW GAME'); await page.waitForTimeout(300); await page.tap('text=OPEN MY SHOP'); await page.waitForTimeout(1500);
 const touch = (type, id, x, y) => page.evaluate(([type, id, x, y]) => {

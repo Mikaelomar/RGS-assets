@@ -26,6 +26,8 @@ Ensimmäisen persoonan kauppasimulaattori Androidille ja iPhonelle. Aloitat pien
 - **Tasot 1–500** palkintoineen ja titteleineen.
 - **Päivittäiset tehtävät** 🎯: kolme uutta tehtävää joka aamu (myy tuotteita, palvele kassalla, anna tasaraha, täytä hyllyt, kierrätä laatikot, siivoa…). Palkintona rahaa ja XP:tä, vapaaehtoisella mainoksella palkinnon voi tuplata. Putkibonus +10 %/päivä (max +50 %).
 - **Markkinointi** 📣: mainoslehtiset, lehti-ilmoitus, radio, some, mainostaulu, ruokavaikuttaja ja TV-mainos tuovat lisää asiakkaita muutamaksi päiväksi. Mainostaulukampanjan aikana kadun mainostaulussa näkyy oman kauppasi mainos.
+- **Joulukausi** 🎄 (20.11.–6.1., laitteen päivämäärän mukaan): jouluvalot julkisivussa, havukranssit, lumisade ja lumiset kadut, 8 joulutuotetta (piparit, suklaarasia, karkkikepit, puuroriisi, glögimäinen marjajuoma, joulustollen, jouluvalot, joulukinkku), joulukuusi koristeeksi (ensimmäinen ilmaiseksi) ja n. 15 % enemmän asiakkaita. Kausitapahtumat voi kytkeä pois asetuksista.
+- **Trukki** 🚜 (päivitys tasolla 25): aja trukkia varastossa ja lastausalueella, nosta kokonainen lava laatikoineen ja kuljeta se nopeasti. Myymälän puolelle trukilla ei saa ajaa.
 - **Automaattinen grafiikka**: Auto-tilassa peli laskee resoluutiota ja varjoja itse, jos puhelin ei jaksa, jotta peli pysyy sulavana.
 - **Päivä ja yö**: avaa kauppa kyltistä kun olet valmis, sulje illalla, tee yötyöt ja päätä päivä 🌙.
 - **Tallennus**: automaattitallennus + 3 tallennuspaikkaa.

@@ -12,6 +12,7 @@ import { CONFIG } from '../data/config';
 import { audio } from '../core/Audio';
 import { CAMPAIGNS, daysLeft, launchCampaign } from '../game/Marketing';
 import { dayProfit, dayCashFlow } from '../game/Sim';
+import { currentSeason, inSeason } from '../game/Season';
 
 type Tab = 'market' | 'prices' | 'staff' | 'store' | 'finance' | 'reviews' | 'orders';
 
@@ -99,6 +100,8 @@ export class ManagerApp {
       sel.appendChild(h('option', { value: 'all' }, 'All categories'));
       sel.appendChild(h('option', { value: 'stocked' }, '★ Sold in my store'));
       sel.appendChild(h('option', { value: 'unlocked' }, 'Available now'));
+      const season = currentSeason();
+      if (season) sel.appendChild(h('option', { value: 'season' }, season.id === 'christmas' ? '🎄 Christmas specials' : `✨ ${season.name}`));
       for (const c of CATEGORIES) sel.appendChild(h('option', { value: c.id }, c.name));
       sel.value = this.cat;
       bar.appendChild(sel);
@@ -109,15 +112,16 @@ export class ManagerApp {
     const scroll = h('div', { class: 'scroll' }, grid);
     this.main.append(subtabs, bar, scroll);
     if (this.sub === 'products') {
-      let list = PRODUCTS.slice();
+      let list = PRODUCTS.filter((p) => inSeason(p.season));
       const stocked = new Set(g.shelves.refs.size ? [...g.shelves.refs.values()].map((r) => r.stock.pid).filter(Boolean) as string[] : []);
       if (this.cat === 'stocked') list = list.filter((p) => stocked.has(p.id));
       else if (this.cat === 'unlocked') list = list.filter((p) => this.productAvailable(p).ok);
+      else if (this.cat === 'season') list = list.filter((p) => !!p.season);
       else if (this.cat !== 'all') list = list.filter((p) => p.category === this.cat);
       list.sort((a, b) => Number(!this.productAvailable(a).ok) - Number(!this.productAvailable(b).ok) || a.level - b.level);
       for (const p of list) grid.appendChild(this.productCard(p));
     } else {
-      const list = SHOP_FURNITURE.slice().sort((a, b) => Number(a.level > g.state.level) - Number(b.level > g.state.level) || a.level - b.level);
+      const list = SHOP_FURNITURE.filter((f) => inSeason(f.season)).sort((a, b) => Number(a.level > g.state.level) - Number(b.level > g.state.level) || a.level - b.level);
       for (const f of list) {
         const locked = f.level > g.state.level;
         const key = 'f:' + f.id;
@@ -150,7 +154,7 @@ export class ManagerApp {
     const card = h('div', { class: 'card' + (av.ok ? '' : ' locked') },
       h('div', { class: 'cimg' }, h('img', { src: img })),
       h('div', { class: 'cbody' },
-        h('div', { class: 'cname' }, p.name),
+        h('div', { class: 'cname' }, (p.season === 'christmas' ? '🎄 ' : '') + p.name),
         h('div', { class: 'cmeta' }, `📦 ${p.perBox} per box · sells ~${money(p.price)}`),
         h('div', { class: 'cmeta' }, `${displayName(p)}${p.shelfLife ? ` · fresh ${p.shelfLife} d` : ''}${owned ? ` · you have ${owned}` : ''}`),
         h('div', { class: 'crow' },

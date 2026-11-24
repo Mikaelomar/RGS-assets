@@ -29,6 +29,7 @@ import { People, Markers } from './People';
 import { Tutorial, drawAvatar } from './Tutorial';
 import { AdManager } from './Ads';
 import { Missions } from './Missions';
+import { Forklift } from './Forklift';
 import { recomputeMarketing, activeCampaigns } from './Marketing';
 import { UI } from '../ui/UI';
 import { ManagerApp } from '../ui/ManagerApp';
@@ -39,7 +40,9 @@ import { bumpUid, nextUid, peekUid, money, round2, WEEKDAYS } from '../core/util
 import { FURN_MAP } from '../data/furniture';
 import { CATEGORY_MAP, type CategoryId } from '../data/products';
 import { UPGRADE_MAP } from '../data/levels';
-import { EXPANSIONS, ROOM_MAP, type RoomId, FLOOR_Y, tierFor, TIERS } from './layout';
+import { EXPANSIONS, ROOM_MAP, type RoomId, FLOOR_Y, tierFor, TIERS, DELIVERY_SPOT } from './layout';
+import { Snow } from '../world/Snow';
+import { currentSeason, isChristmas } from './Season';
 import { writeSave, type SlotId } from './Save';
 import { CONFIG } from '../data/config';
 import { haptic } from '../core/Platform';
@@ -54,6 +57,8 @@ export class Game {
   city: City;
   building: Building;
   rain: Rain;
+  snow: Snow;
+  private seasonT = 0;
   col = new Collision();
   nav: NavGrid;
   furniture: FurnitureSystem;
@@ -79,6 +84,7 @@ export class Game {
   app: ManagerApp;
   dialogs: Dialogs;
   missions: Missions;
+  forklift: Forklift;
   state!: GameState;
   mode: Mode = 'walk';
   carry: BoxRT | null = null;
@@ -121,6 +127,7 @@ export class Game {
     scene.add(this.city.group);
     this.building = new Building(scene, this.col, this.daylight);
     this.rain = new Rain(scene);
+    this.snow = new Snow(scene, (x, z) => !this.building.isIndoors(x, z));
     this.nav = new NavGrid(this.col, this.building);
     this.furniture = new FurnitureSystem(scene, this.col);
     this.stock = new StockRenderer(scene);
@@ -147,6 +154,7 @@ export class Game {
     this.app = new ManagerApp(this);
     this.dialogs = new Dialogs(this);
     this.missions = new Missions(this);
+    this.forklift = new Forklift(this);
     this.ui.hud.avatarImg.src = drawAvatar();
 
     this.sim.on('levelUp', (lv) => {
@@ -206,7 +214,9 @@ export class Game {
     this.cleaning.load();
     this.orders.load();
     this.power.applyPower();
+    if (state.weather === 'snow' && !isChristmas()) state.weather = 'cloudy';
     this.daylight.rain = state.weather === 'rain' ? 1 : 0;
+    this.daylight.snow = state.weather === 'snow' ? 1 : 0;
     const p = state.player;
     this.player.pos.set(p.x, 0, p.z);
     this.player.yaw = p.yaw;
@@ -222,6 +232,7 @@ export class Game {
     this.refreshMarketingVisuals();
     this.missions.ensure();
     this.missions.refreshButton();
+    this.forklift.sync();
   }
 
   start() {
@@ -265,6 +276,7 @@ export class Game {
       this.player.update(dt);
       this.onFrameHook(dt);
       if (this.pushing) this.updatePushing();
+      this.forklift.update(dt);
       if (this.player.moving) s.energy = Math.max(0, s.energy - dt * (this.input.running ? CONFIG.energyRunDrain : 0) - dt * (this.carry ? CONFIG.energyCarryDrain : 0));
       for (let k = 0; k < this.timeScale; k++) {
         this.sim.update(dt);
@@ -286,6 +298,10 @@ export class Game {
       const agents: { x: number; z: number; staff: boolean }[] = [{ x: this.player.pos.x, z: this.player.pos.z, staff: true }];
       for (const c of this.customers.list) agents.push({ x: c.pos.x, z: c.pos.z, staff: false });
       for (const a of this.staff.agents()) agents.push({ x: a.pos.x, z: a.pos.z, staff: true });
+      if (this.forklift.driving) {
+        const f = this.forklift.frontPoint();
+        agents.push({ x: f.x, z: f.z, staff: true });
+      }
       this.building.update(dt, agents);
       this.city.update(dt, [...this.orders.blockers(), { x: this.player.pos.x, z: this.player.pos.z }]);
       // level up dialogs at a calm moment
@@ -312,6 +328,12 @@ export class Game {
     audio.setLoop('crowd', Math.min(0.5, this.customers.inStore * 0.03));
     audio.setLoop('rain', this.daylight.rain * (outside ? 0.6 : 0.2));
     this.rain.update(dt, this.engine.camera.position, this.daylight.rain, !outside);
+    this.snow.update(dt, this.engine.camera.position, this.daylight.snow);
+    this.seasonT -= dt;
+    if (this.seasonT <= 0) {
+      this.seasonT = 2;
+      this.checkSeason();
+    }
     this.updateHud(dt);
     this.engine.render();
     this.ui.update(dt, this.engine.camera, this.engine.width, this.engine.height);
@@ -418,6 +440,10 @@ export class Game {
   grabPallet(p: BoxRT) {
     if (this.carry || this.pushing) return;
     if (!this.state.upgrades.includes('palletjack')) {
+      if (this.state.upgrades.includes('forklift')) {
+        this.ui.toast('Use your forklift to move pallets (or buy the Pallet Jack upgrade)', 'info', '🚜');
+        return;
+      }
       this.ui.toast('Buy the Pallet Jack upgrade (Store → Upgrades) to move pallets', 'info', '🛻');
       return;
     }
@@ -549,6 +575,32 @@ export class Game {
     this.refreshMarketingVisuals();
   }
 
+  /** Seasonal look (winter snow) and the one-time season greeting + gift. */
+  checkSeason() {
+    const s = this.state;
+    if (!s) return;
+    const xmas = isChristmas();
+    this.city.setWinter(xmas);
+    if (!xmas && s.weather === 'snow') {
+      s.weather = 'cloudy';
+      this.daylight.snow = 0;
+    }
+    const se = currentSeason();
+    if (!se || this.demo || !s.tutorialDone || this.mode !== 'walk' || this.ui.modalOpen) return;
+    s.seasonsSeen ??= [];
+    if (s.seasonsSeen.includes(se.key)) return;
+    s.seasonsSeen.push(se.key);
+    if (se.id === 'christmas') {
+      const p = new THREE.Vector3(DELIVERY_SPOT.x + 0.9, 1.2, DELIVERY_SPOT.z + 0.2);
+      this.addBoxState({ uid: nextUid(), pid: 'apple', count: 0, exp: 0, x: p.x, y: p.y, z: p.z, ry: 0.3, kind: 'furniture', furn: 'xmas_tree' }, new THREE.Vector3(0, 0, 0));
+      this.markers.add('xmasgift', p.clone().setY(1.9), '🎁', 90);
+      s.weather = 'snow';
+      this.daylight.snow = 1;
+      this.daylight.rain = 0;
+      this.dialogs.seasonWelcome();
+    }
+  }
+
   /** The street billboard shows the store's ad while that campaign runs. */
   refreshMarketingVisuals() {
     const s = this.state;
@@ -652,6 +704,11 @@ export class Game {
     audio.play('unlock');
     this.ui.toast(`${u.name} installed!`, 'good', u.icon);
     if (id === 'generator') this.power.applyPower();
+    if (id === 'forklift') {
+      this.forklift.sync();
+      this.markers.add('forklift', new THREE.Vector3(s.forklift!.x, 2.8, s.forklift!.z), '🚜', 40);
+      this.ui.toast('Your forklift is parked next to the delivery spot. Walk to it and tap ✋ to drive.', 'info', '🚜', 5000);
+    }
   }
 
   takeLoan(v: number) {
@@ -730,6 +787,7 @@ export class Game {
 
   private startNextDay() {
     const s = this.state;
+    if (this.forklift.driving) this.forklift.exit(true);
     this.sim.startNewDay();
     this.checkConstruction(true);
     recomputeMarketing(s);

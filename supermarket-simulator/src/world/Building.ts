@@ -12,6 +12,7 @@ import {
 } from '../game/layout';
 import type { GameState } from '../game/state';
 import { clamp, money } from '../core/util';
+import { isChristmas } from '../game/Season';
 
 const V3 = THREE.Vector3;
 
@@ -234,6 +235,7 @@ export class Building {
 
     // ---- store sign + open sign
     this.buildSigns(state);
+    if (isChristmas()) this.buildXmasDecor();
     this.applyLight();
   }
 
@@ -649,6 +651,56 @@ export class Building {
     f.box(0.01, 0.6, 0.01, '#222222', sm.position.x + 0.35, 2.48, sm.position.z);
     this.dynamic.add(new THREE.Mesh(f.build()!, this.mats.frame));
     this.dynamic.add(sm);
+  }
+
+  /** String lights along the storefront and wreaths on the entrance doors. */
+  private buildXmasDecor() {
+    const bulbs = new GeoBuilder();
+    const wire = new GeoBuilder();
+    const cols = ['#ff3b30', '#ffcc00', '#34c759', '#0a84ff', '#ff9f0a', '#bf5af2'];
+    let k = 0;
+    const z = WALL_T / 2 + 0.07;
+    const garland = (x0: number, x1: number, yTop: number, sag: number, span: number) => {
+      const n = Math.max(1, Math.round((x1 - x0) / span));
+      const seg = (x1 - x0) / n;
+      let prev: [number, number] | null = null;
+      for (let i = 0; i < n; i++) {
+        for (let j = 0; j <= 6; j++) {
+          const t = j / 6;
+          const x = x0 + seg * (i + t);
+          const y = yTop - sag * (1 - (2 * t - 1) * (2 * t - 1));
+          if (prev) {
+            const dx = x - prev[0], dy = y - prev[1];
+            const len = Math.hypot(dx, dy);
+            wire.box(len, 0.012, 0.012, '#1b3d23', (x + prev[0]) / 2, (y + prev[1]) / 2, z, { rz: Math.atan2(dy, dx) });
+          }
+          prev = [x, y];
+          if (j < 6) bulbs.sphere(0.062, cols[k++ % cols.length], x, y - 0.06, z + 0.02, { ws: 6, hs: 4 });
+        }
+      }
+    };
+    for (let c = 0; c < COLS; c++) {
+      if (!this.isPlot(c, 0)) continue;
+      garland(c * PLOT + 0.05, (c + 1) * PLOT - 0.05, BLD_H - 0.08, 0.22, 2);
+      garland(c * PLOT + 0.35, (c + 1) * PLOT - 0.35, 3.98, 0.18, 1.6);
+    }
+    const wreath = new GeoBuilder();
+    for (const d of DOORS) {
+      if (d.kind !== 'auto' || !d.plot || !this.isPlot(d.plot[0], d.plot[1])) continue;
+      wreath.torus(0.3, 0.075, '#1f6b34', d.x, 3.0, 0.17, { rs: 8, ts: 18 });
+      for (let i = 0; i < 8; i++) {
+        const a = (i / 8) * Math.PI * 2;
+        wreath.sphere(0.035, i % 2 ? '#d32f2f' : '#ffd54f', d.x + Math.cos(a) * 0.3, 3.0 + Math.sin(a) * 0.3, 0.24, { ws: 6, hs: 4 });
+      }
+      wreath.box(0.2, 0.12, 0.05, '#c62828', d.x, 2.72, 0.24);
+    }
+    const bm = new THREE.MeshBasicMaterial({ vertexColors: true, toneMapped: false });
+    const wm = new THREE.MeshStandardMaterial({ vertexColors: true, roughness: 0.7 });
+    this.daylight.registerOutdoor(wm);
+    const bulbGeo = bulbs.build(), wireGeo = wire.build(), wreathGeo = wreath.build();
+    if (bulbGeo) this.dynamic.add(new THREE.Mesh(bulbGeo, bm));
+    if (wireGeo) this.dynamic.add(new THREE.Mesh(wireGeo, wm));
+    if (wreathGeo) this.dynamic.add(new THREE.Mesh(wreathGeo, wm));
   }
 
   setOpenSign(open: boolean) {

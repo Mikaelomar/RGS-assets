@@ -12,6 +12,7 @@ import { CUSTOMER_REVIEWS, FIRST_NAMES_F, FIRST_NAMES_M } from '../data/staff';
 import { clamp, h, pick, rand, chance, weightedPick, round2 } from '../core/util';
 import { DOORS, tierFor } from './layout';
 import { audio } from '../core/Audio';
+import { isChristmas, inSeason } from './Season';
 
 export type CState =
   | 'walkby' | 'approach' | 'enter' | 'basket' | 'shop' | 'reach' | 'toCheckout' | 'queue' | 'counter' | 'leave' | 'exit' | 'wc' | 'steal' | 'caught' | 'complain';
@@ -139,6 +140,8 @@ export class CustomerSystem {
     mul += s.marketing;
     if (g.sim.isWeekend) mul *= 1.3;
     if (s.weather === 'rain') mul *= 0.8;
+    if (s.weather === 'snow') mul *= 0.9;
+    if (isChristmas()) mul *= 1.15; // Christmas shopping
     mul *= g.events.customerMul();
     return (CONFIG.baseCustomersPerHour / 60) * tierMul * repMul * variety * mul * TIME_CURVE(g.sim.hour);
   }
@@ -215,7 +218,7 @@ export class CustomerSystem {
     const licensed = PRODUCTS.filter((p) => p.level <= s.level + 3 && (CATEGORY_MAP.get(p.category)!.license === null || s.licenses.includes(p.category) || chance(0.08)));
     const picks: ListItem[] = [];
     for (let i = 0; i < n; i++) {
-      const p = weightedPick(licensed, (p) => p.popularity * (stocked.has(p.id) ? 4 : 0.35) * (picks.some((x) => x.pid === p.id) ? 0 : 1) * (1 + (s.promos[p.id] ?? 0) / 25));
+      const p = weightedPick(licensed, (p) => p.popularity * (stocked.has(p.id) ? 4 : 0.35) * (picks.some((x) => x.pid === p.id) ? 0 : 1) * (1 + (s.promos[p.id] ?? 0) / 25) * (p.season ? (inSeason(p.season) ? 1.3 : 0) : 1));
       if (!p) break;
       picks.push({ pid: p.id, qty: p.price < 1.2 && chance(0.4) ? Math.ceil(rand(1, 4)) : 1, done: false, tried: 0 });
     }

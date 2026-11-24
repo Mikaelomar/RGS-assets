@@ -33,7 +33,7 @@ export class Menus {
         saves.length ? btn('📂 LOAD GAME', 'dark', () => this.loadDialog()) : null,
         btn('⚙️ SETTINGS', 'dark', () => this.settingsDialog()),
       ),
-      h('div', { class: 'title-foot' }, h('span', { onclick: () => this.credits() }, 'Credits'), ' · ', h('span', { onclick: () => this.help() }, 'How to play'), !isNative ? ' · ' : null, !isNative ? h('span', { onclick: () => requestFullscreen() }, 'Fullscreen') : null, ' · v1.0'),
+      h('div', { class: 'title-foot' }, h('span', { onclick: () => this.credits() }, 'Credits'), ' · ', h('span', { onclick: () => this.help() }, 'How to play'), !isNative ? ' · ' : null, !isNative ? h('span', { onclick: () => requestFullscreen() }, 'Fullscreen') : null, ` · v${__APP_VERSION__.replace(/\.0$/, '')}`),
     );
     this.titleEl = h('div', { class: 'title-screen' }, card);
     this.titleEl.addEventListener('touchstart', (e) => e.stopPropagation(), { passive: true });
@@ -112,6 +112,7 @@ export class Menus {
       slider('Music', 0, 1, 0.05, () => s.music, (v) => (s.music = v)),
       toggle('Vibration', () => s.vibration, (v) => (s.vibration = v)),
       toggle('Show FPS', () => s.showFps, (v) => (s.showFps = v)),
+      toggle('Seasonal events (Christmas…)', () => s.seasonal !== false, (v) => (s.seasonal = v)),
       h('div', { class: 'row', style: { marginTop: '6px' } },
         h('button', { class: 'btn small dark', onclick: () => this.g.ads.showPrivacyOptions() }, '🔒 Ad privacy options'),
         this.g.state?.tutorialDone === false ? h('button', { class: 'btn small orange', onclick: () => { this.g.tutorial.skip(); this.g.ui.toast('Tutorial skipped', 'info'); } }, 'Skip tutorial') : null),

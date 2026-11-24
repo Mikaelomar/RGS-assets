@@ -146,6 +146,22 @@ export class Dialogs {
     const close = g.ui.modal('CUSTOMER COMPLAINT', body, { size: 'medium', color: 'red', onClose: () => { if (!done) finish(0, -0.01, 0, 'The customer walked away.', 0); } });
   }
 
+  seasonWelcome() {
+    const g = this.g;
+    const li = (t: string) => h('li', { style: { margin: '5px 0' } }, t);
+    const body = h('div', null,
+      h('div', { style: { fontSize: '54px', textAlign: 'center', lineHeight: '1' } }, '🎄'),
+      h('p', { style: { fontWeight: '800', fontSize: '16px', textAlign: 'center', margin: '6px 0 8px' } }, 'The Christmas season has started in town!'),
+      h('ul', { style: { fontWeight: '700', fontSize: '14px', paddingLeft: '18px', margin: '0 0 8px' } },
+        li('🎁 A free Christmas tree was delivered to your delivery spot. Carry it inside and build it!'),
+        li('🍪 Christmas specials in the Market: gingerbread, chocolate boxes, candy canes, stollen, a winter berry drink and more.'),
+        li('🛍️ Christmas shoppers: about 15% more customers until 6 January.'),
+        li('❄️ Snowy days bring more dirt inside. Keep the mop ready!')),
+      h('div', { class: 'row', style: { justifyContent: 'center' } },
+        h('button', { class: 'btn green', onclick: () => close() }, 'MERRY CHRISTMAS!')));
+    const close = g.ui.modal("SEASON'S GREETINGS", body, { size: 'medium', color: 'red' });
+  }
+
   bankrupt(onRestart: () => void, onLoan: () => void) {
     const g = this.g;
     const body = h('div', { style: { textAlign: 'center' } },

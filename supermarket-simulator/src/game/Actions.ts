@@ -21,7 +21,8 @@ export type Target =
   | { t: 'sign'; sign: WallSign }
   | { t: 'opensign' }
   | { t: 'floor'; point: THREE.Vector3 }
-  | { t: 'person'; kind: 'customer' | 'staff'; obj: any };
+  | { t: 'person'; kind: 'customer' | 'staff'; obj: any }
+  | { t: 'vehicle' };
 
 interface PromptInfo { text: string; sub?: string; icon: string; label: string; hold?: boolean; warn?: boolean; repeat?: boolean; holdTime?: number; }
 
@@ -97,6 +98,8 @@ export class Actions {
         best = { t: 'furn', f };
       }
     }
+    // forklift
+    if (g.forklift.st && !g.forklift.driving) consider(g.forklift.box3, { t: 'vehicle' }, 0, 3.4);
     // signs
     for (const s of g.building.signs) consider(s.box, { t: 'sign', sign: s }, 0, 3.5);
     consider(g.building.openSignBox, { t: 'opensign' }, 0, 3.2);
@@ -194,6 +197,7 @@ export class Actions {
         return { text: open ? 'Close the store' : 'Open the store', sub: open ? 'No new customers will come in' : g.state.phase === 'night' ? 'Too late today' : `Open until ${g.state.closeHour}:00`, icon: open ? '🔒' : '🔓', label: open ? 'Close' : 'Open' };
       }
       case 'person': return g.people.prompt(t.kind, t.obj, c);
+      case 'vehicle': return c ? { text: 'Forklift', sub: 'Put down what you are carrying first', icon: '🚜', label: '', warn: true } : { text: 'Forklift', sub: 'Drive it to move whole pallets of boxes', icon: '🚜', label: 'Drive' };
       case 'floor': {
         const pt = t.point;
         if (c) {
@@ -322,6 +326,15 @@ export class Actions {
       g.ui.hud.setHold(null);
       return;
     }
+    if (g.forklift.driving) {
+      const fk = g.forklift;
+      hud.setPrompt('Driving the forklift', fk.carrying ? '✋ lower the pallet · ⤵️ get out' : 'Drive the forks under a pallet, then ✋ to lift · ⤵️ get out', false, 'E');
+      hud.setAction(fk.carrying ? '⬇️' : '⬆️', fk.carrying ? 'Lower' : 'Lift', true);
+      hud.showDrop(true);
+      if (input.wasPressed('action')) fk.toggleForks();
+      else if (input.wasPressed('drop')) fk.exit();
+      return;
+    }
     if (g.pushing) {
       hud.setPrompt('Pushing a pallet', 'Tap ✋ or ⤵️ to set it down', false, 'E');
       hud.setAction('🛻', 'Release', true);
@@ -400,6 +413,7 @@ export class Actions {
       case 'sign': return 'g' + t.sign.kind + t.sign.index + t.sign.room;
       case 'opensign': return 'open';
       case 'person': return 'p' + (t.obj.id ?? '');
+      case 'vehicle': return 'forklift';
       case 'floor': {
         const sp = this.g.cleaning.spillAt(t.point.x, t.point.z);
         return sp ? 'spill' + sp.uid : 'floor';
@@ -469,6 +483,9 @@ export class Actions {
         return;
       case 'person':
         if (kind === 'tap') g.people.interact(t.kind, t.obj);
+        return;
+      case 'vehicle':
+        if (kind === 'tap' && !c) g.forklift.enter();
         return;
       case 'floor':
         if (c && c.s.kind === 'furniture' && kind === 'tap') g.build.startAssemble(c, t.point);

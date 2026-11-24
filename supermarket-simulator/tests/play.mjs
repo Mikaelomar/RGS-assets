@@ -6,7 +6,7 @@ const page = await browser.newPage({ viewport: { width: +w, height: +h }, hasTou
 const logs = [];
 page.on('console', (m) => { if (!m.text().includes('GPU stall')) logs.push(`[${m.type()}] ${m.text()}`); });
 page.on('pageerror', (e) => logs.push(`[pageerror] ${e.message}\n${e.stack}`));
-await page.goto('http://localhost:5173/?fixedres', { waitUntil: 'load' });
+await page.goto('http://localhost:5173/?fixedres&season=none', { waitUntil: 'load' });
 await page.waitForFunction(() => window.game && document.querySelector('.title-screen'), null, { timeout: 60000 });
 await page.waitForTimeout(1500);
 const shot = async (name) => { await page.screenshot({ path: `tests/out/${name}.png` }); console.log('shot', name); };
