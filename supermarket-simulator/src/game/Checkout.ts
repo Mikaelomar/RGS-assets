@@ -64,13 +64,22 @@ export class CheckoutSystem {
 
   sync() {
     for (const f of this.g.furniture.items.values()) if (f.def.interact === 'checkout' || f.def.interact === 'selfcheckout') this.counter(f);
-    for (const [uid, c] of this.counters) {
-      if (!this.g.furniture.items.has(uid)) {
-        for (const cu of [...c.queue, ...(c.serving ? [c.serving] : [])]) this.g.customers.goToCheckout(cu);
-        this.clearBelt(c);
-        this.counters.delete(uid);
-      }
+    for (const [uid, c] of [...this.counters]) {
+      if (this.g.furniture.items.has(uid)) continue;
+      // remove the counter first: re-routing its customers calls pickCounter() -> sync() again
+      const waiting = [...c.queue, ...(c.serving ? [c.serving] : [])];
+      this.clearBelt(c);
+      this.counters.delete(uid);
+      if (this.active === c) this.leave();
+      for (const cu of waiting) if (!cu.removed) this.g.customers.goToCheckout(cu);
     }
+  }
+
+  /** Forget every counter (a different game was loaded). */
+  clearAll() {
+    if (this.active) this.leave();
+    for (const c of this.counters.values()) this.clearBelt(c);
+    this.counters.clear();
   }
 
   queueLength(f: FurnRT) {

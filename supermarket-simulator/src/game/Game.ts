@@ -187,6 +187,7 @@ export class Game {
     this.state = state;
     bumpUid(state.nextUid);
     // reset runtime systems
+    this.checkout.clearAll();
     this.customers.clearAll();
     this.staff.clearAgents();
     for (const uid of [...this.boxes.items.keys()]) this.boxes.remove(uid);
@@ -266,6 +267,7 @@ export class Game {
   // ------------------------------------------------------------------ frame
   frame(dt: number) {
     this.time += dt;
+    this.input.joystick = this.mode === 'walk';
     this.input.update();
     const s = this.state;
     const sim = !this.paused;

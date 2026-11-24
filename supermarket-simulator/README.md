@@ -38,8 +38,9 @@ Ensimmäisen persoonan kauppasimulaattori Androidille ja iPhonelle. Aloitat pien
 | Puhelin | Tietokone |
 |---|---|
 | Vasen puoli: joystick (kävely) | WASD / nuolet |
-| Oikea puoli: vedä katsoaksesi | Hiiri (klikkaa peliä) |
+| Oikea puoli: vedä katsoaksesi | Klikkaa peliä, niin hiiri lukittuu katseluun (jos selain ei salli lukitusta: vedä hiirellä) |
 | ✋ = käytä / poimi / aseta (pidä pohjassa = toista) | E tai hiiren vasen |
+| Kassalla: napauta tuotetta hihnalla | Klikkaa tuotetta |
 | ⤵️ = laske laatikko maahan | Q tai hiiren oikea |
 | 🏃 = juoksu päälle/pois | Shift |
 | 📱 = kaupan hallinta / tilaukset | Tab |

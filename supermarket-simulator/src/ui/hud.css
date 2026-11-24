@@ -348,3 +348,8 @@
 .missions .ms-left { font-family: var(--font-display); font-size: 18px; color: #90a4ae; flex: none; width: 54px; text-align: right; }
 .missions .ms-claimed { font-weight: 900; color: #2e7d32; flex: none; }
 .card.campaign.running { box-shadow: 0 0 0 3px #36b24a inset; }
+
+/* Only real controls take touches; the containers around them let touches through to the 3D view. */
+.hud .actions, .hud .sidebtns, .hud .hud-inner { pointer-events: none; }
+.hud .actions > *, .hud .sidebtns > * { pointer-events: auto; }
+.hud .actions > .hidden { pointer-events: none; }
